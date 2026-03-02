@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - AI Based Smart Interview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body{
+            background:#0f0f18;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            font-family:'Inter',sans-serif;
+            color:white;
+        }
+
+        .card{
+            width:350px;
+            padding:40px;
+            border-radius:20px;
+            background:rgba(255,255,255,0.05);
+            backdrop-filter:blur(20px);
+        }
+
+        h2{
+            margin-bottom:25px;
+            text-align:center;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin-bottom:15px;
+            border-radius:10px;
+            border:none;
+            outline:none;
+        }
+
+        button{
+            width:100%;
+            padding:12px;
+            border-radius:10px;
+            border:none;
+            background:linear-gradient(90deg,#7c5cff,#a66cff);
+            color:white;
+            cursor:pointer;
+        }
+
+        p{
+            margin-top:15px;
+            text-align:center;
+        }
+
+        a{
+            color:#a66cff;
+        }
+
+        .error{
+            margin-top:10px;
+            color:#ff6b6b;
+            text-align:center;
+        }
+
+        .success{
+            margin-top:10px;
+            color:#4caf50;
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Create Account</h2>
+
+    <input type="text" id="name" placeholder="Full Name">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="register()">Register</button>
+
+    <div class="error" id="errorBox"></div>
+    <div class="success" id="successBox"></div>
+
+    <p>Already have an account? <a href="login.html">Login</a></p>
+</div>
+
+<script>
+async function register(){
+
+    const errorBox = document.getElementById("errorBox");
+    const successBox = document.getElementById("successBox");
+
+    errorBox.innerText = "";
+    successBox.innerText = "";
+
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if(!name || !email || !password){
+        errorBox.innerText = "Please fill all fields.";
+        return;
+    }
+
+    try{
+
+        const res = await fetch('/api/auth/register',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({name,email,password})
+        });
+
+        const data = await res.json();
+
+        if(res.ok){
+            successBox.innerText = "Registration successful. Redirecting to login...";
+            setTimeout(()=>{
+                window.location.href="login.html";
+            },1500);
+        }else{
+            errorBox.innerText = data.message || "Registration failed.";
+        }
+
+    }catch(err){
+        errorBox.innerText = "Server not responding.";
+    }
+}
+</script>
+
+</body>
+</html>

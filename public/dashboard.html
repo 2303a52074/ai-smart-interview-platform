@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Smart Interview Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Inter, sans-serif;
+}
+
+/* ===== BODY BACKGROUND UPGRADE ===== */
+body{
+display:flex;
+min-height:100vh;
+color:white;
+overflow-x:hidden;
+background:linear-gradient(-45deg,#0f0f18,#141423,#1a1a2d,#111122);
+background-size:400% 400%;
+animation:gradientMove 15s ease infinite;
+transition:0.3s;
+}
+
+@keyframes gradientMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+width:250px;
+background:rgba(20,20,35,0.7);
+backdrop-filter:blur(15px);
+padding:30px;
+height:100vh;
+box-shadow:5px 0 30px rgba(0,0,0,0.6);
+border-right:1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar h2{
+color:#9d7bff;
+margin-bottom:30px;
+font-weight:700;
+letter-spacing:1px;
+}
+
+.sidebar button{
+width:100%;
+padding:12px;
+margin-bottom:12px;
+background:rgba(255,255,255,0.05);
+border:none;
+color:#bbb;
+text-align:left;
+border-radius:10px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.sidebar button:hover{
+background:#7c5cff;
+color:white;
+transform:translateX(5px);
+}
+
+/* ===== MAIN ===== */
+.main{
+flex:1;
+padding:40px;
+}
+
+/* ===== CARD GLASS EFFECT ===== */
+.card{
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(20px);
+padding:25px;
+border-radius:20px;
+margin-bottom:25px;
+box-shadow:0 15px 40px rgba(0,0,0,0.5);
+border:1px solid rgba(255,255,255,0.08);
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-5px);
+}
+
+/* ===== BUTTON ===== */
+.btn{
+background:linear-gradient(135deg,#7c5cff,#9d7bff);
+border:none;
+padding:10px 18px;
+border-radius:10px;
+color:white;
+cursor:pointer;
+margin-top:10px;
+font-weight:bold;
+transition:0.3s;
+}
+
+.btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 20px rgba(124,92,255,0.6);
+}
+
+/* ===== SUMMARY ===== */
+.summary{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin-bottom:25px;
+}
+
+/* ===== RING ===== */
+.ring{
+width:130px;
+height:130px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:22px;
+font-weight:bold;
+background:conic-gradient(#7c5cff 0%,#222 0%);
+box-shadow:0 0 35px rgba(124,92,255,0.7);
+transition:0.3s;
+}
+
+.ring:hover{
+transform:scale(1.05);
+}
+
+/* ===== INSIGHT ===== */
+.insight{
+background:rgba(255,255,255,0.05);
+padding:15px;
+border-radius:12px;
+margin-top:15px;
+border:1px solid rgba(255,255,255,0.08);
+}
+
+/* ===== INPUTS ===== */
+input,select,textarea{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:10px;
+border:none;
+background:rgba(255,255,255,0.07);
+color:white;
+outline:none;
+transition:0.3s;
+}
+
+input:focus,select:focus,textarea:focus{
+box-shadow:0 0 10px rgba(124,92,255,0.6);
+}
+
+/* ===== PROGRESS BAR ===== */
+.progressBar{
+height:8px;
+background:#333;
+border-radius:10px;
+margin-top:10px;
+overflow:hidden;
+}
+
+.progressInner{
+height:100%;
+background:linear-gradient(90deg,#ff4d4d,#ff884d);
+width:100%;
+transition:width 0.5s ease;
+}
+
+/* ===== VIDEO ===== */
+video{
+margin-top:15px;
+border-radius:12px;
+background:black;
+box-shadow:0 0 20px rgba(0,0,0,0.7);
+}
+
+/* ===== DARK MODE ===== */
+.dark{
+background:#f4f4f4;
+color:#111;
+animation:none;
+}
+
+.dark .card{
+background:white;
+color:black;
+border:1px solid #ddd;
+}
+
+.dark input,
+.dark select,
+.dark textarea{
+background:#eee;
+color:black;
+}
+
+.dark .sidebar{
+background:#ffffff;
+color:black;
+}
+
+</style>
+
+<body>
+
+<div class="sidebar">
+<h2>AI Smart</h2>
+<button onclick="showSection('dashboard')">Dashboard</button>
+<button onclick="showSection('resume')">Resume Analyzer</button>
+<button onclick="showSection('interview')">Interview</button>
+<button onclick="showSection('history')">History</button>
+<button onclick="showSection('analytics')">Analytics</button>
+<button onclick="showSection('profile')">Profile</button>
+<button onclick="toggleMode()">Toggle Theme</button>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboardSection">
+<h1>Overview</h1>
+<div class="summary">
+<div><div class="ring" id="avgRing">0%</div><p>Average</p></div>
+<div><div class="ring" id="bestRing">0%</div><p>Best</p></div>
+<div><h2 id="total">0</h2><p>Total Interviews</p></div>
+<div><h2 id="streak">0</h2><p>🔥 Streak</p></div>
+</div>
+<div class="insight" id="aiInsight"></div>
+</div>
+
+<!-- RESUME -->
+<div id="resumeSection" class="card" style="display:none;">
+<h2>Resume Analyzer</h2>
+<input type="file" id="resumeFile">
+<button class="btn" onclick="uploadResume()">Analyze</button>
+<div id="resumeResult"></div>
+</div>
+
+<!-- INTERVIEW -->
+<div id="interviewSection" class="card" style="display:none;">
+<h2>Interview</h2>
+
+<select id="type">
+<option value="technical">Technical</option>
+<option value="english">English MCQ</option>
+<option value="aptitude">Aptitude MCQ</option>
+<option value="video">Video</option>
+<option value="voice">AI Voice Interview</option>
+</select>
+
+<select id="role">
+<option value="general">General</option>
+<option value="frontend">Frontend</option>
+<option value="backend">Backend</option>
+</select>
+
+<select id="difficulty">
+<option value="easy">Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+</select>
+
+<button class="btn" onclick="startInterview()">Start</button>
+
+<div id="timer"></div>
+<div class="progressBar"><div class="progressInner" id="progressInner"></div></div>
+
+<div id="questionArea"></div>
+
+<div id="voiceControls" style="display:none;">
+<button class="btn" onclick="startListening()">🎤 Start Speaking</button>
+<button class="btn" onclick="stopListening()">⏹ Stop</button>
+<p id="voiceStatus"></p>
+</div>
+
+<div id="videoArea" style="display:none;">
+<video id="preview" autoplay muted playsinline width="300"></video><br>
+<button class="btn" onclick="startRecording()">Record</button>
+<button class="btn" onclick="stopRecording()">Stop</button>
+<div id="recordStatus"></div>
+</div>
+</div>
+
+<!-- HISTORY -->
+<div id="historySection" class="card" style="display:none;">
+<h2>Interview History</h2>
+<div id="historyBox"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="analyticsSection" class="card" style="display:none;">
+<h2>Performance Analytics</h2>
+<canvas id="trendChart"></canvas>
+</div>
+
+<!-- PROFILE -->
+<div id="profileSection" class="card" style="display:none;">
+<h2 id="greet"></h2>
+<input id="name">
+<input id="email">
+<button class="btn" onclick="updateProfile()">Update</button>
+</div>
+
+</div>
+
+<script>
+const token=localStorage.getItem("token");
+if(!token)location="login.html";
+
+let questions=[],index=0,totalScore=0,timeLeft=30,timerInterval,currentRole="",currentType="";
+let stream,mediaRecorder,chunks=[],recognition;
+
+/* SECTION SWITCH */
+function showSection(id){
+["dashboard","resume","interview","history","analytics","profile"]
+.forEach(s=>document.getElementById(s+"Section").style.display="none");
+document.getElementById(id+"Section").style.display="block";
+if(id==="dashboard")loadSummary();
+if(id==="history")loadHistory();
+if(id==="analytics")loadAnalytics();
+if(id==="profile")loadProfile();
+}
+
+function toggleMode(){document.body.classList.toggle("dark");}
+
+/* ================= INTERVIEW ================= */
+async function startInterview(){
+document.getElementById("questionArea").innerHTML="Loading...";
+document.getElementById("videoArea").style.display="none";
+document.getElementById("voiceControls").style.display="none";
+
+currentType=document.getElementById("type").value;
+currentRole=document.getElementById("role").value;
+const difficulty=document.getElementById("difficulty").value;
+
+if(currentType==="video"){
+document.getElementById("videoArea").style.display="block";
+enableCamera();return;
+}
+
+const res=await fetch('/api/interview/generate',{
+method:"POST",
+headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
+body:JSON.stringify({role:currentRole,type:"technical",difficulty})
+});
+const data=await res.json();
+questions=data.questions;
+index=0;
+totalScore=0;
+
+if(currentType==="voice") showVoiceQuestion();
+else showQuestion();
+}
+
+function showQuestion(){
+if(index>=questions.length){finishInterview();return;}
+timeLeft=30;updateTimer();
+clearInterval(timerInterval);
+timerInterval=setInterval(()=>{timeLeft--;updateTimer();
+if(timeLeft<=0){clearInterval(timerInterval);submitAnswer();}},1000);
+
+const q=questions[index];
+document.getElementById("questionArea").innerHTML=
+`<p>${q.question}</p>
+<textarea id="ans"></textarea>
+<button class="btn" onclick="submitAnswer()">Submit</button>`;
+}
+
+function showVoiceQuestion(){
+if(index>=questions.length){finishInterview();return;}
+document.getElementById("voiceControls").style.display="block";
+const q=questions[index];
+document.getElementById("questionArea").innerHTML=
+`<p>${q.question}</p>
+<textarea id="ans"></textarea>
+<button class="btn" onclick="submitAnswer()">Submit</button>`;
+speakQuestion(q.question);
+}
+
+function updateTimer(){
+document.getElementById("timer").innerText="Time: "+timeLeft;
+document.getElementById("progressInner").style.width=(timeLeft/30*100)+"%";
+}
+
+async function submitAnswer(){
+clearInterval(timerInterval);
+const answer=document.getElementById("ans").value;
+const res=await fetch('/api/interview/evaluate',{
+method:"POST",
+headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
+body:JSON.stringify({role:currentRole,questionIndex:index,answer})
+});
+const data=await res.json();
+totalScore+=data.score;
+index++;
+setTimeout(()=>{currentType==="voice"?showVoiceQuestion():showQuestion();},1500);
+}
+
+async function finishInterview(){
+const percent=Math.round(totalScore/questions.length);
+document.getElementById("questionArea").innerHTML=
+`<h3>Completed</h3><p>Your Score: ${percent}%</p>`;
+await fetch('/api/interview/save',{
+method:"POST",
+headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
+body:JSON.stringify({role:currentRole,totalScore:percent})
+});
+loadSummary();
+}
+
+/* VOICE */
+function speakQuestion(text){
+const speech=new SpeechSynthesisUtterance(text);
+speech.rate=0.9;window.speechSynthesis.speak(speech);
+}
+
+function startListening(){
+recognition=new webkitSpeechRecognition();
+recognition.lang="en-US";
+recognition.onresult=(e)=>{
+document.getElementById("ans").value=e.results[0][0].transcript;
+};
+recognition.start();
+}
+
+function stopListening(){if(recognition)recognition.stop();}
+
+/* VIDEO */
+async function enableCamera(){
+stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+document.getElementById("preview").srcObject=stream;
+}
+function startRecording(){
+chunks=[];mediaRecorder=new MediaRecorder(stream);
+mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+mediaRecorder.onstop=uploadVideo;mediaRecorder.start();
+}
+function stopRecording(){mediaRecorder.stop();}
+async function uploadVideo(){
+const blob=new Blob(chunks,{type:"video/webm"});
+const fd=new FormData();fd.append("video",blob,"interview.webm");
+await fetch('/api/video/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
+}
+
+/* RESUME */
+async function uploadResume(){
+const file=document.getElementById("resumeFile").files[0];
+const fd=new FormData();fd.append("resume",file);
+const res=await fetch('/api/resume/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
+const data=await res.json();
+let jobs=data.suggestedJobs?
+data.suggestedJobs.map(j=>`<p>${j.title} <a href="${j.link}" target="_blank">Apply</a></p>`).join(""):"";
+document.getElementById("resumeResult").innerHTML=
+`Score:${data.score}%<br>Skills:${data.matchedSkills.join(", ")}<br>${jobs}`;
+}
+
+/* HISTORY */
+async function loadHistory(){
+const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const data=await res.json();
+document.getElementById("historyBox").innerHTML=
+data.map(d=>`<p>${d.role} - ${d.totalScore}%</p>`).join("");
+}
+
+/* ANALYTICS */
+async function loadAnalytics(){
+const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const data=await res.json();
+new Chart(document.getElementById("trendChart"),{
+type:"line",
+data:{labels:data.map((d,i)=>"Attempt "+(i+1)),
+datasets:[{label:"Performance",
+data:data.map(d=>d.totalScore),
+borderColor:"#7c5cff",
+backgroundColor:"rgba(124,92,255,0.2)",
+fill:true,tension:0.4}]}
+});
+}
+
+/* PROFILE */
+async function loadProfile(){
+const res=await fetch('/api/auth/profile',{headers:{Authorization:"Bearer "+token}});
+const data=await res.json();
+document.getElementById("name").value=data.name;
+document.getElementById("email").value=data.email;
+document.getElementById("greet").innerText=
+`Hello ${data.name}, You’re going to crack it! 🚀`;
+}
+async function updateProfile(){
+await fetch('/api/auth/profile',{
+method:"PUT",
+headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
+body:JSON.stringify({
+name:document.getElementById("name").value,
+email:document.getElementById("email").value
+})
+});
+alert("Updated");
+}
+
+/* SUMMARY */
+async function loadSummary(){
+const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const data=await res.json();
+let total=data.length,sum=0,best=0;
+data.forEach(d=>{sum+=d.totalScore;if(d.totalScore>best)best=d.totalScore;});
+let avg=total?Math.round(sum/total):0;
+document.getElementById("total").innerText=total;
+document.getElementById("avgRing").style.background=`conic-gradient(#7c5cff ${avg}%,#222 ${avg}% 100%)`;
+document.getElementById("avgRing").innerText=avg+"%";
+document.getElementById("bestRing").style.background=`conic-gradient(#7c5cff ${best}%,#222 ${best}% 100%)`;
+document.getElementById("bestRing").innerText=best+"%";
+document.getElementById("streak").innerText=total;
+document.getElementById("aiInsight").innerText=
+total>0?`Your best score is ${best}%. Push to 95%!`:
+"Start your first interview to unlock AI insights.";
+}
+
+loadSummary();
+</script>
+
+</body>
+</html>

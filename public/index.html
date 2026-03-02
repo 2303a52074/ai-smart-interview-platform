@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Based Smart Interview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root{
+            --bg:#0f0f18;
+            --text:#ffffff;
+            --muted:#b0b0c3;
+            --card:rgba(255,255,255,0.05);
+            --accent:#7c5cff;
+        }
+
+        body.light{
+            --bg:#f5f6fa;
+            --text:#111;
+            --muted:#555;
+            --card:#ffffff;
+        }
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Inter',sans-serif;
+        }
+
+        body{
+            background:var(--bg);
+            color:var(--text);
+            transition:0.4s ease;
+            overflow-x:hidden;
+        }
+
+        /* Particle Canvas */
+        #particles{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            z-index:-1;
+        }
+
+        /* Navbar */
+        .navbar{
+            position:fixed;
+            top:20px;
+            left:50%;
+            transform:translateX(-50%);
+            width:90%;
+            max-width:1200px;
+            padding:15px 30px;
+            background:var(--card);
+            backdrop-filter:blur(20px);
+            border-radius:20px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            z-index:1000;
+        }
+
+        .nav-buttons button{
+            margin-left:10px;
+        }
+
+        .btn{
+            padding:12px 22px;
+            border-radius:10px;
+            border:none;
+            cursor:pointer;
+            font-size:14px;
+        }
+
+        .btn-primary{
+            background:linear-gradient(90deg,#7c5cff,#a66cff);
+            color:white;
+        }
+
+        .btn-outline{
+            background:transparent;
+            border:1px solid var(--accent);
+            color:var(--accent);
+        }
+
+        section{
+            min-height:100vh;
+            padding:140px 10%;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+        }
+
+        h1{
+            font-size:64px;
+            line-height:1.2;
+            margin-bottom:20px;
+        }
+
+        .highlight{
+            background:linear-gradient(90deg,#7c5cff,#a66cff);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
+
+        p{
+            font-size:18px;
+            color:var(--muted);
+            margin-bottom:30px;
+            line-height:1.6;
+        }
+
+        .hero-left{
+            max-width:600px;
+        }
+
+        .card{
+            width:420px;
+            padding:40px;
+            border-radius:25px;
+            background:var(--card);
+            backdrop-filter:blur(20px);
+            box-shadow:0 40px 80px rgba(0,0,0,0.4);
+        }
+
+        .card h3{
+            margin-bottom:20px;
+            color:var(--accent);
+        }
+
+        .mock-bar{
+            height:8px;
+            background:#ddd;
+            border-radius:5px;
+            overflow:hidden;
+            margin-bottom:20px;
+        }
+
+        .mock-fill{
+            height:100%;
+            background:linear-gradient(90deg,#7c5cff,#a66cff);
+        }
+
+        /* Pricing */
+        .pricing{
+            display:flex;
+            justify-content:space-between;
+            width:100%;
+        }
+
+        .price-card{
+            width:30%;
+            padding:40px;
+            background:var(--card);
+            border-radius:20px;
+            text-align:center;
+        }
+
+        .price{
+            font-size:36px;
+            margin:20px 0;
+            color:var(--accent);
+        }
+
+        @media(max-width:900px){
+            section{
+                flex-direction:column;
+                text-align:center;
+            }
+            .pricing{
+                flex-direction:column;
+                gap:20px;
+            }
+            .price-card{
+                width:100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="navbar">
+    <h2>AI Based Smart Interview</h2>
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="toggleTheme()">Toggle</button>
+        <button class="btn btn-primary" onclick="window.location.href='login.html'">Login</button>
+    </div>
+</div>
+
+<!-- HERO SECTION -->
+<section>
+    <div class="hero-left">
+        <h1>
+            Master Interviews With<br>
+            <span class="highlight">AI Intelligence</span>
+        </h1>
+
+        <p>
+            Upload your resume. Practice adaptive mock interviews.
+            Receive structured feedback and track measurable improvement —
+            all powered by a smart evaluation engine.
+        </p>
+
+        <button class="btn btn-primary" onclick="window.location.href='register.html'">
+            Start Free Practice
+        </button>
+    </div>
+
+    <div class="card" id="dashboardMock">
+        <h3>Live Performance Snapshot</h3>
+
+        <p>Skill Match Accuracy</p>
+        <div class="mock-bar"><div class="mock-fill" style="width:94%"></div></div>
+
+        <p>Interview Automation</p>
+        <div class="mock-bar"><div class="mock-fill" style="width:88%"></div></div>
+
+        <p>Evaluation Precision</p>
+        <div class="mock-bar"><div class="mock-fill" style="width:91%"></div></div>
+    </div>
+</section>
+
+<!-- PRICING SECTION -->
+<section>
+    <div class="pricing">
+        <div class="price-card">
+            <h2>Free</h2>
+            <div class="price">$0</div>
+            <p>Resume Analysis</p>
+            <p>Basic Mock Interviews</p>
+            <button class="btn btn-outline">Choose Plan</button>
+        </div>
+
+        <div class="price-card">
+            <h2>Pro</h2>
+            <div class="price">$19/mo</div>
+            <p>Advanced AI Evaluation</p>
+            <p>Detailed Analytics</p>
+            <button class="btn btn-primary">Choose Plan</button>
+        </div>
+
+        <div class="price-card">
+            <h2>Enterprise</h2>
+            <div class="price">$49/mo</div>
+            <p>Full AI Suite</p>
+            <p>Admin Dashboard</p>
+            <button class="btn btn-outline">Choose Plan</button>
+        </div>
+    </div>
+</section>
+
+<script>
+    gsap.from(".hero-left",{opacity:0,y:80,duration:1.2});
+    gsap.from("#dashboardMock",{opacity:0,x:200,duration:1.5});
+
+    function toggleTheme(){
+        document.body.classList.toggle("light");
+    }
+
+    /* Particle Background */
+    const canvas=document.getElementById("particles");
+    const ctx=canvas.getContext("2d");
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+
+    let particles=[];
+    for(let i=0;i<80;i++){
+        particles.push({
+            x:Math.random()*canvas.width,
+            y:Math.random()*canvas.height,
+            r:Math.random()*2,
+            dx:(Math.random()-0.5),
+            dy:(Math.random()-0.5)
+        });
+    }
+
+    function animate(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle="rgba(124,92,255,0.5)";
+        particles.forEach(p=>{
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+            ctx.fill();
+            p.x+=p.dx;
+            p.y+=p.dy;
+            if(p.x<0||p.x>canvas.width) p.dx*=-1;
+            if(p.y<0||p.y>canvas.height) p.dy*=-1;
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+</script>
+
+</body>
+</html>

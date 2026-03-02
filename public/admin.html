@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Admin Panel</h1>
+
+    <button onclick="loadUsers()">View Users</button>
+    <button onclick="loadInterviews()">View Interviews</button>
+    <button onclick="logout()">Logout</button>
+
+    <div id="adminData"></div>
+</div>
+
+<script>
+
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "/";
+
+async function loadUsers() {
+
+    const res = await fetch('/api/admin/users', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    const box = document.getElementById("adminData");
+
+    if (!res.ok) {
+        const error = await res.json();
+        box.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+        return;
+    }
+
+    const data = await res.json();
+
+    box.innerHTML = "<h3>Users:</h3>";
+
+    data.forEach(user => {
+        box.innerHTML += `
+            <div class="card">
+                Name: ${user.name}<br>
+                Email: ${user.email}<br>
+                Role: ${user.role}
+            </div>
+        `;
+    });
+}
+
+async function loadInterviews() {
+
+    const res = await fetch('/api/admin/interviews', {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    const box = document.getElementById("adminData");
+
+    if (!res.ok) {
+        const error = await res.json();
+        box.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+        return;
+    }
+
+    const data = await res.json();
+
+    box.innerHTML = "<h3>All Interviews:</h3>";
+
+    data.forEach(item => {
+        box.innerHTML += `
+            <div class="card">
+                User: ${item.userId.name} (${item.userId.email})<br>
+                Role: ${item.role}<br>
+                Score: ${item.totalScore}<br>
+                Date: ${new Date(item.date).toLocaleString()}
+            </div>
+        `;
+    });
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "/";
+}
+
+</script>
+
+</body>
+</html>
