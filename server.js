@@ -23,9 +23,14 @@ app.use('/api/interview', interviewRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/video', videoRoutes);
 
+if (!process.env.MONGO_URI) {
+    console.log("MONGO_URI not found!");
+    process.exit(1);
+}
+
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err));
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log(err));
 
 const PORT = process.env.PORT || 5000;
 
