@@ -316,6 +316,7 @@ color:black;
 
 <script>
 const token=localStorage.getItem("token");
+const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
 if(!token)location="login.html";
 
 let questions=[],index=0,totalScore=0,timeLeft=30,timerInterval,currentRole="",currentType="";
