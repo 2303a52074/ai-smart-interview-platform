@@ -350,7 +350,7 @@ document.getElementById("videoArea").style.display="block";
 enableCamera();return;
 }
 
-const res=await fetch('/api/interview/generate',{
+const res=await fetch(BASE_URL + '/api/interview/generate',{
 method:"POST",
 headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
 body:JSON.stringify({role:currentRole,type:"technical",difficulty})
@@ -397,7 +397,7 @@ document.getElementById("progressInner").style.width=(timeLeft/30*100)+"%";
 async function submitAnswer(){
 clearInterval(timerInterval);
 const answer=document.getElementById("ans").value;
-const res=await fetch('/api/interview/evaluate',{
+const res=await fetch(BASE_URL + '/api/interview/evaluate',{
 method:"POST",
 headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
 body:JSON.stringify({role:currentRole,questionIndex:index,answer})
@@ -412,7 +412,7 @@ async function finishInterview(){
 const percent=Math.round(totalScore/questions.length);
 document.getElementById("questionArea").innerHTML=
 `<h3>Completed</h3><p>Your Score: ${percent}%</p>`;
-await fetch('/api/interview/save',{
+await fetch(BASE_URL + '/api/interview/save',{
 method:"POST",
 headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
 body:JSON.stringify({role:currentRole,totalScore:percent})
@@ -451,14 +451,14 @@ function stopRecording(){mediaRecorder.stop();}
 async function uploadVideo(){
 const blob=new Blob(chunks,{type:"video/webm"});
 const fd=new FormData();fd.append("video",blob,"interview.webm");
-await fetch('/api/video/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
+await fetch(BASE_URL + '/api/video/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
 }
 
 /* RESUME */
 async function uploadResume(){
 const file=document.getElementById("resumeFile").files[0];
 const fd=new FormData();fd.append("resume",file);
-const res=await fetch('/api/resume/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
+const res=await fetch(BASE_URL + '/api/resume/upload',{method:"POST",headers:{Authorization:"Bearer "+token},body:fd});
 const data=await res.json();
 let jobs=data.suggestedJobs?
 data.suggestedJobs.map(j=>`<p>${j.title} <a href="${j.link}" target="_blank">Apply</a></p>`).join(""):"";
@@ -468,7 +468,7 @@ document.getElementById("resumeResult").innerHTML=
 
 /* HISTORY */
 async function loadHistory(){
-const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const res=await fetch(BASE_URL + '/api/interview/history',{headers:{Authorization:"Bearer "+token}});
 const data=await res.json();
 document.getElementById("historyBox").innerHTML=
 data.map(d=>`<p>${d.role} - ${d.totalScore}%</p>`).join("");
@@ -476,7 +476,7 @@ data.map(d=>`<p>${d.role} - ${d.totalScore}%</p>`).join("");
 
 /* ANALYTICS */
 async function loadAnalytics(){
-const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const res=await fetch(BASE_URL + '/api/interview/history',{headers:{Authorization:"Bearer "+token}});
 const data=await res.json();
 new Chart(document.getElementById("trendChart"),{
 type:"line",
@@ -491,7 +491,7 @@ fill:true,tension:0.4}]}
 
 /* PROFILE */
 async function loadProfile(){
-const res=await fetch('/api/auth/profile',{headers:{Authorization:"Bearer "+token}});
+const res=await fetch(BASE_URL + '/api/auth/profile',{headers:{Authorization:"Bearer "+token}});
 const data=await res.json();
 document.getElementById("name").value=data.name;
 document.getElementById("email").value=data.email;
@@ -499,7 +499,7 @@ document.getElementById("greet").innerText=
 `Hello ${data.name}, You’re going to crack it! 🚀`;
 }
 async function updateProfile(){
-await fetch('/api/auth/profile',{
+await fetch(BASE_URL + '/api/auth/profile',{
 method:"PUT",
 headers:{'Content-Type':'application/json',Authorization:"Bearer "+token},
 body:JSON.stringify({
@@ -512,7 +512,7 @@ alert("Updated");
 
 /* SUMMARY */
 async function loadSummary(){
-const res=await fetch('/api/interview/history',{headers:{Authorization:"Bearer "+token}});
+const res=await fetch(BASE_URL + '/api/auth/profile',{headers:{Authorization:"Bearer "+token}});
 const data=await res.json();
 let total=data.length,sum=0,best=0;
 data.forEach(d=>{sum+=d.totalScore;if(d.totalScore>best)best=d.totalScore;});
