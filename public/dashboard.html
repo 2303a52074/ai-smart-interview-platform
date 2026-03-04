@@ -1,233 +1,48 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>AI Smart Interview Platform</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Inter, sans-serif;
-}
-
-body{
-display:flex;
-min-height:100vh;
-color:white;
-background:linear-gradient(-45deg,#0f0f18,#141423,#1a1a2d,#111122);
-background-size:400% 400%;
-animation:gradientMove 15s ease infinite;
-}
-
-@keyframes gradientMove{
-0%{background-position:0% 50%}
-50%{background-position:100% 50%}
-100%{background-position:0% 50%}
-}
-
-.sidebar{
-width:250px;
-background:rgba(20,20,35,0.8);
-padding:30px;
-height:100vh;
-box-shadow:5px 0 30px rgba(0,0,0,0.5);
-}
-
-.sidebar h2{
-color:#9d7bff;
-margin-bottom:30px;
-}
-
-.sidebar button{
-width:100%;
-padding:12px;
-margin-bottom:12px;
-background:#1f1f33;
-border:none;
-color:#bbb;
-border-radius:10px;
-cursor:pointer;
-}
-
-.sidebar button:hover{
-background:#7c5cff;
-color:white;
-}
-
-.main{
-flex:1;
-padding:40px;
-}
-
-.card{
-background:rgba(255,255,255,0.05);
-padding:25px;
-border-radius:20px;
-margin-bottom:25px;
-box-shadow:0 10px 40px rgba(0,0,0,0.4);
-}
-
-.btn{
-background:#7c5cff;
-border:none;
-padding:10px 18px;
-border-radius:8px;
-color:white;
-cursor:pointer;
-margin-top:10px;
-}
-
-input,select,textarea{
-width:100%;
-padding:10px;
-margin-top:10px;
-border-radius:8px;
-border:none;
-background:#2a2a44;
-color:white;
-}
-
-.progressBar{
-height:8px;
-background:#333;
-border-radius:10px;
-margin-top:10px;
-overflow:hidden;
-}
-
-.progressInner{
-height:100%;
-background:#ff4d4d;
-width:0%;
-}
-
-.avatar{
-width:80px;
-height:80px;
-border-radius:50%;
-background:#7c5cff;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:30px;
-margin-bottom:15px;
-}
-
-.mcqOption{
-display:block;
-margin-top:10px;
-background:#2a2a44;
-padding:12px;
-border-radius:8px;
-cursor:pointer;
-}
-
-.mcqOption:hover{
-background:#7c5cff;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="sidebar">
-
-<h2>AI Smart</h2>
-
-<button onclick="showSection('dashboard')">Dashboard</button>
-<button onclick="showSection('resume')">Resume Analyzer</button>
-<button onclick="showSection('interview')">Interview</button>
-<button onclick="showSection('history')">History</button>
-<button onclick="showSection('analytics')">Analytics</button>
-<button onclick="logout()">Logout</button>
-
-</div>
-
-<div class="main">
-
-<div id="dashboardSection">
-<h1>Overview</h1>
-<div class="card">
-<p id="practiceStatus">Start practicing interviews today 🚀</p>
-</div>
-</div>
-
-<div id="resumeSection" class="card" style="display:none">
-
-<h2>Resume Analyzer</h2>
-
-<input type="file" id="resumeFile">
-
-<button class="btn">Analyze</button>
-
-</div>
-
-<div id="interviewSection" class="card" style="display:none">
-
-<h2>AI Interview</h2>
-
-<div class="avatar">🤖</div>
-
-<select id="mode">
-<option value="typing">Descriptive Interview</option>
-<option value="mcq">MCQ Test</option>
-<option value="company">Company Interview</option>
-</select>
-
-<select id="company">
-<option value="google">Google</option>
-<option value="amazon">Amazon</option>
-<option value="microsoft">Microsoft</option>
-<option value="meta">Meta</option>
-<option value="netflix">Netflix</option>
-</select>
-
-<select id="role">
-<option value="frontend">Frontend</option>
-<option value="backend">Backend</option>
-<option value="react">React</option>
-<option value="node">NodeJS</option>
-<option value="python">Python</option>
-<option value="java">Java</option>
-<option value="data">Data Structures</option>
-<option value="system">System Design</option>
-<option value="sql">SQL</option>
-<option value="ml">Machine Learning</option>
-<option value="cloud">Cloud</option>
-</select>
-
-<button class="btn" onclick="startInterview()">Start Interview</button>
-
-<div id="timer"></div>
-
-<div class="progressBar">
-<div class="progressInner" id="progressInner"></div>
-</div>
-
-<div id="questionArea"></div>
-
-</div>
+<!-- HISTORY -->
 
 <div id="historySection" class="card" style="display:none">
+
 <h2>Interview History</h2>
+
 <div id="historyBox"></div>
+
 </div>
 
+<!-- ANALYTICS -->
+
 <div id="analyticsSection" class="card" style="display:none">
+
 <h2>Performance Analytics</h2>
+
 <canvas id="trendChart"></canvas>
+
+<canvas id="radarChart"></canvas>
+
+</div>
+
+<!-- PROFILE -->
+
+<div id="profileSection" class="card" style="display:none">
+
+<h2 id="greet"></h2>
+
+<input id="name">
+
+<input id="email">
+
+<button class="btn" onclick="updateProfile()">Update</button>
+
 </div>
 
 </div>
 
 <script>
+
+const token=localStorage.getItem("token");
+
+const BASE_URL="https://ai-smart-interview-platform-1.onrender.com";
+
+if(!token)location="login.html";
 
 let questions=[];
 let index=0;
@@ -235,125 +50,94 @@ let totalScore=0;
 let timeLeft=30;
 let timerInterval;
 
-const mcqDB={
-frontend:[
-{q:"HTML used for?",options:["Structure","Styling","Database","AI"],ans:0},
-{q:"CSS property for layout?",options:["display","color","font","margin"],ans:0}
-],
-backend:[
-{q:"NodeJS built on?",options:["V8","Java","Python","Ruby"],ans:0}
-],
-data:[
-{q:"Binary search complexity?",options:["O(n)","O(log n)","O(n²)","O(1)"],ans:1}
-]
-};
-
-const companyQuestions={
-google:[
-"Explain MapReduce.",
-"How does Google Search rank pages?",
-"Design Google Drive system."
-],
-amazon:[
-"Explain Amazon leadership principles.",
-"Design Amazon shopping cart."
-],
-microsoft:[
-"What is Azure cloud?",
-"Design Microsoft Teams chat."
-]
-};
-
 function showSection(id){
 
-["dashboard","resume","interview","history","analytics"]
+["dashboard","resume","interview","history","analytics","profile"]
 .forEach(s=>document.getElementById(s+"Section").style.display="none");
 
 document.getElementById(id+"Section").style.display="block";
 
+if(id==="dashboard")loadSummary();
+if(id==="analytics")loadAnalytics();
+if(id==="history")loadHistory();
+
 }
 
-function startInterview(){
+function logout(){
 
-const mode=document.getElementById("mode").value;
-const role=document.getElementById("role").value;
+localStorage.removeItem("token");
+
+location="login.html";
+
+}
+
+/* Practice Tracker */
+
+function updatePractice(){
+
+const today=new Date().toDateString();
+
+let last=localStorage.getItem("practice");
+
+if(last!==today){
+
+localStorage.setItem("practice",today);
+
+document.getElementById("practiceStatus").innerText="Practice Done Today ✅";
+
+}else{
+
+document.getElementById("practiceStatus").innerText="Already Practiced Today 🔥";
+
+}
+
+}
+
+/* Interview */
+
+async function startInterview(){
+
+const res=await fetch(BASE_URL+'/api/interview/generate',{
+
+method:"POST",
+
+headers:{
+'Content-Type':'application/json',
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+role:document.getElementById("role").value,
+type:"technical"
+})
+
+});
+
+const data=await res.json();
+
+questions=data.questions;
 
 index=0;
+
 totalScore=0;
 
-if(mode==="mcq"){
-
-questions=mcqDB[role]||[];
-showMCQ();
+showQuestion();
 
 }
 
-else if(mode==="company"){
-
-const company=document.getElementById("company").value;
-questions=companyQuestions[company].map(q=>({question:q}));
-
-showTyping();
-
-}
-
-else{
-
-questions=[
-{question:"Explain REST API."},
-{question:"Difference between SQL and NoSQL."}
-];
-
-showTyping();
-
-}
-
-}
-
-function showMCQ(){
+function showQuestion(){
 
 if(index>=questions.length){
+
 finishInterview();
+
 return;
-}
 
-const q=questions[index];
-
-document.getElementById("questionArea").innerHTML=`
-
-<h3>Question ${index+1}/${questions.length}</h3>
-<p>${q.q}</p>
-
-${q.options.map((opt,i)=>`
-<div class="mcqOption" onclick="submitMCQ(${i})">${opt}</div>
-`).join("")}
-
-`;
-
-}
-
-function submitMCQ(i){
-
-const q=questions[index];
-
-if(i===q.ans) totalScore+=10;
-
-index++;
-
-updateProgress();
-
-showMCQ();
-
-}
-
-function showTyping(){
-
-if(index>=questions.length){
-finishInterview();
-return;
 }
 
 timeLeft=30;
+
+updateTimer();
 
 clearInterval(timerInterval);
 
@@ -361,7 +145,7 @@ timerInterval=setInterval(()=>{
 
 timeLeft--;
 
-document.getElementById("timer").innerText="Time: "+timeLeft;
+updateTimer();
 
 if(timeLeft<=0){
 
@@ -375,6 +159,8 @@ submitAnswer();
 
 const q=questions[index];
 
+speak(q.question);
+
 document.getElementById("questionArea").innerHTML=`
 
 <h3>Question ${index+1}/${questions.length}</h3>
@@ -387,7 +173,19 @@ document.getElementById("questionArea").innerHTML=`
 
 <button class="btn" onclick="skipQuestion()">Skip</button>
 
+<div id="feedbackBox"></div>
+
 `;
+
+}
+
+function speak(text){
+
+const speech=new SpeechSynthesisUtterance(text);
+
+speech.rate=0.9;
+
+window.speechSynthesis.speak(speech);
 
 }
 
@@ -395,49 +193,98 @@ function skipQuestion(){
 
 index++;
 
-updateProgress();
-
-showTyping();
+showQuestion();
 
 }
 
-function submitAnswer(){
+function updateTimer(){
+
+document.getElementById("timer").innerText="Time: "+timeLeft;
+
+document.getElementById("progressInner").style.width=((index+1)/questions.length*100)+"%";
+
+}
+
+async function submitAnswer(){
 
 clearInterval(timerInterval);
 
-totalScore+=7;
+const answer=document.getElementById("ans").value;
+
+const res=await fetch(BASE_URL+'/api/interview/evaluate',{
+
+method:"POST",
+
+headers:{
+'Content-Type':'application/json',
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({answer})
+
+});
+
+const data=await res.json();
+
+totalScore+=data.score;
+
+let feedback="";
+
+if(data.feedback){
+
+feedback="<ul>";
+
+data.feedback.forEach(f=>feedback+=`<li>${f}</li>`);
+
+feedback+="</ul>";
+
+}
+
+document.getElementById("feedbackBox").innerHTML=
+
+`Score:${data.score}/10<br>${feedback}`;
 
 index++;
 
-updateProgress();
-
-setTimeout(showTyping,1500);
+setTimeout(showQuestion,2000);
 
 }
 
-function updateProgress(){
-
-document.getElementById("progressInner").style.width=((index)/questions.length*100)+"%";
-
-}
-
-function finishInterview(){
+async function finishInterview(){
 
 const percent=Math.round(totalScore/questions.length);
 
-document.getElementById("questionArea").innerHTML=`
+document.getElementById("questionArea").innerHTML=
 
-<h3>Interview Completed</h3>
+`<h3>Interview Completed</h3>
 
 <p>Your Score: ${percent}%</p>
 
 <button class="btn" onclick="downloadReport(${percent})">
-Download Report
+Download PDF Report
 </button>
 
 `;
 
+await fetch(BASE_URL+'/api/interview/save',{
+
+method:"POST",
+
+headers:{
+'Content-Type':'application/json',
+Authorization:"Bearer "+token
+},
+
+body:JSON.stringify({
+role:"general",
+totalScore:percent
+})
+
+});
+
 }
+
+/* PDF */
 
 function downloadReport(score){
 
@@ -452,6 +299,106 @@ doc.text("Score: "+score+"%",20,40);
 doc.save("Interview_Report.pdf");
 
 }
+
+/* Resume */
+
+async function uploadResume(){
+
+const file=document.getElementById("resumeFile").files[0];
+
+const fd=new FormData();
+
+fd.append("resume",file);
+
+const res=await fetch(BASE_URL+'/api/resume/upload',{
+
+method:"POST",
+
+headers:{Authorization:"Bearer "+token},
+
+body:fd
+
+});
+
+const data=await res.json();
+
+document.getElementById("resumeResult").innerHTML=
+
+`Score:${data.score}%<br>Skills:${data.matchedSkills.join(", ")}`;
+
+document.getElementById("jobSuggestions").innerHTML=
+
+"<h3>Recommended Jobs</h3><p>Frontend Developer</p><p>React Developer</p><p>AI Engineer</p>";
+
+}
+
+/* History */
+
+async function loadHistory(){
+
+const res=await fetch(BASE_URL+'/api/interview/history',{
+headers:{Authorization:"Bearer "+token}
+});
+
+const data=await res.json();
+
+document.getElementById("historyBox").innerHTML=
+
+data.map(d=>`<p>${d.role} - ${d.totalScore}%</p>`).join("");
+
+}
+
+/* Analytics */
+
+async function loadAnalytics(){
+
+const res=await fetch(BASE_URL+'/api/interview/history',{
+headers:{Authorization:"Bearer "+token}
+});
+
+const data=await res.json();
+
+new Chart(document.getElementById("trendChart"),{
+
+type:"line",
+
+data:{
+labels:data.map((d,i)=>"Attempt "+(i+1)),
+datasets:[{
+label:"Score",
+data:data.map(d=>d.totalScore),
+borderColor:"#7c5cff"
+}]
+}
+
+});
+
+new Chart(document.getElementById("radarChart"),{
+
+type:"radar",
+
+data:{
+labels:["Technical","Communication","Confidence","Clarity","Problem Solving"],
+datasets:[{
+label:"Skills",
+data:[70,75,80,65,85],
+borderColor:"#7c5cff"
+}]
+}
+
+});
+
+}
+
+/* Summary */
+
+async function loadSummary(){
+
+updatePractice();
+
+}
+
+loadSummary();
 
 </script>
 
