@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log('HF_TOKEN present?', process.env.HF_TOKEN ? '✅ YES' : '❌ NO');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
