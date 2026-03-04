@@ -6,48 +6,77 @@ const natural = require('natural');
 const { WordTokenizer, PorterStemmer } = natural;
 const tokenizer = new WordTokenizer();
 
-const router = express.Router();
+// AI question generator (transformers)
+const { pipeline } = require('@xenova/transformers');
+let generator = null;
+
+async function getGenerator() {
+  if (!generator) {
+    console.log('Loading AI model (first time may take a few seconds)...');
+    generator = await pipeline('text2text-generation', 'Xenova/t5-small');
+    console.log('AI model loaded.');
+  }
+  return generator;
+}
+
+/**
+ * Generate an interview question using AI
+ */
+async function generateQuestion(role, difficulty) {
+  const gen = await getGenerator();
+  const prompt = `Generate a technical interview question for a ${difficulty} level ${role} developer. The question should be clear and specific.`;
+  const result = await gen(prompt, {
+    max_length: 60,
+    temperature: 0.7,
+    do_sample: true,
+  });
+  let questionText = result[0].generated_text.trim();
+  // Clean common prefixes
+  questionText = questionText.replace(/^question:/i, '').trim();
+  return {
+    type: 'text',
+    question: questionText,
+    skill: role,
+    difficulty: difficulty,
+    keywords: [], // AI-generated questions don't have predefined keywords; evaluation will be generic
+    hint: `Think about the core concepts of ${role}.`,
+  };
+}
 
 // ----------------------------- Helper: Evaluate answer with keywords -----------------------------
 function evaluateAnswer(answer, keywords, minLength = 20) {
   if (!answer || answer.trim().length === 0) {
-    return { score: 0, feedback: 'No answer provided.' };
+    return { score: 0, feedback: ['No answer provided.'] };
   }
 
-  // Tokenize and stem the answer
   const answerTokens = tokenizer.tokenize(answer.toLowerCase());
   const stemmedAnswer = answerTokens.map(t => PorterStemmer.stem(t));
-
-  // Stem the keywords as well
   const stemmedKeywords = keywords.map(k => PorterStemmer.stem(k.toLowerCase()));
 
-  // Count how many keywords are present in the answer
   let matchedCount = 0;
   stemmedKeywords.forEach(sk => {
     if (stemmedAnswer.includes(sk)) matchedCount++;
   });
 
-  // Calculate base score (percentage of keywords matched)
-  const keywordScore = (matchedCount / keywords.length) * 10; // scale to 10
-
-  // Bonus for answer length (encourages elaboration)
+  const keywordScore = (matchedCount / Math.max(keywords.length, 1)) * 10;
   const lengthBonus = answer.length > minLength ? 1 : 0;
-
-  // Bonus for good grammar/sentence structure (simple heuristic: number of sentences)
   const sentences = answer.split(/[.!?]+/).filter(s => s.trim().length > 0);
   const structureBonus = sentences.length >= 3 ? 1 : 0;
 
-  // Total score, capped at 10
   let totalScore = Math.min(10, Math.round(keywordScore + lengthBonus + structureBonus));
 
-  // Generate feedback
   let feedback = [];
-  if (matchedCount === 0) {
-    feedback.push('Your answer missed key technical terms. Try to include specific concepts.');
-  } else if (matchedCount < keywords.length / 2) {
-    feedback.push('Good start, but you missed several important points.');
+  if (keywords.length === 0) {
+    // No keywords (AI questions) – give generic feedback based on length
+    feedback.push(answer.length > 50 ? 'Good detail.' : 'Try to elaborate more.');
   } else {
-    feedback.push('You covered most of the key concepts well.');
+    if (matchedCount === 0) {
+      feedback.push('Your answer missed key technical terms. Try to include specific concepts.');
+    } else if (matchedCount < keywords.length / 2) {
+      feedback.push('Good start, but you missed several important points.');
+    } else {
+      feedback.push('You covered most of the key concepts well.');
+    }
   }
 
   if (answer.length < minLength) {
@@ -63,33 +92,143 @@ function evaluateAnswer(answer, keywords, minLength = 20) {
   return { score: totalScore, feedback };
 }
 
-// ----------------------------- Helper: XP calculation -----------------------------
+// ----------------------------- XP calculation -----------------------------
 function calculateXP(score, difficulty) {
   const base = score * 10;
   const multiplier = difficulty === 'easy' ? 1 : difficulty === 'medium' ? 1.5 : 2;
   return Math.round(base * multiplier);
 }
 
-/* ================= TECHNICAL QUESTIONS (with keywords) ================= */
-// (Keep your existing technicalQuestions object exactly as before – it already has keywords)
-// For brevity, I'm not repeating the whole object here, but make sure you include it.
-// It should be identical to the one you've been using.
-const technicalQuestions = { /* ... your existing questions ... */ };
+/* ================= STATIC QUESTION BANKS (FALLBACK) ================= */
+const technicalQuestions = {
+  frontend: [
+    { type: "text", question: "What is the Virtual DOM in React?", keywords: ["virtual dom", "react", "update"], skill: "react", difficulty: "easy", hint: "A lightweight copy of the real DOM for performance." },
+    { type: "text", question: "Explain the difference between '==' and '===' in JavaScript.", keywords: ["equality", "strict", "type"], skill: "javascript", difficulty: "easy", hint: "Equality vs strict equality." },
+    { type: "mcq", question: "Which CSS property is used to create a flex container?", options: ["display: flex", "position: flex", "flex-container: true", "flex-box: inline"], answer: 0, skill: "css", difficulty: "easy" },
+    { type: "text", question: "What is event delegation in JavaScript?", keywords: ["event", "delegation", "bubbling"], skill: "javascript", difficulty: "medium", hint: "Attaching an event listener to a parent to handle events on children." },
+    { type: "mcq", question: "In React, what is the purpose of the 'useEffect' hook?", options: ["To handle side effects", "To create state", "To render JSX", "To handle routing"], answer: 0, skill: "react", difficulty: "medium" },
+    { type: "text", question: "Explain the box model in CSS.", keywords: ["content", "padding", "border", "margin"], skill: "css", difficulty: "medium", hint: "Content, padding, border, margin." },
+    { type: "mcq", question: "Which of the following is a JavaScript framework?", options: ["React", "Laravel", "Django", "Flask"], answer: 0, skill: "javascript", difficulty: "easy" },
+    { type: "text", question: "What is a Promise in JavaScript?", keywords: ["async", "future", "then", "catch"], skill: "javascript", difficulty: "medium", hint: "An object representing eventual completion of an async operation." },
+    { type: "mcq", question: "What does 'npm' stand for?", options: ["Node Package Manager", "New Project Manager", "Node Project Module", "Never Publish Modules"], answer: 0, skill: "node", difficulty: "easy" },
+    { type: "text", question: "Explain the concept of 'hoisting' in JavaScript.", keywords: ["variable", "function", "declaration", "scope"], skill: "javascript", difficulty: "hard", hint: "Variables and function declarations are moved to the top." }
+  ],
+  backend: [
+    { type: "text", question: "What is RESTful API design?", keywords: ["http", "stateless", "resource"], skill: "api", difficulty: "easy", hint: "Uses HTTP methods and stateless communication." },
+    { type: "mcq", question: "Which HTTP method is used to update a resource?", options: ["GET", "POST", "PUT", "DELETE"], answer: 2, skill: "api", difficulty: "easy" },
+    { type: "text", question: "Explain middleware in Express.js.", keywords: ["request", "response", "next"], skill: "node", difficulty: "easy", hint: "Functions that have access to request and response objects." },
+    { type: "mcq", question: "What is the primary purpose of JWT?", options: ["Authentication", "Encryption", "Data compression", "Caching"], answer: 0, skill: "security", difficulty: "medium" },
+    { type: "text", question: "What is the difference between SQL and NoSQL databases?", keywords: ["relational", "schema", "document"], skill: "database", difficulty: "medium", hint: "Relational vs non‑relational." },
+    { type: "mcq", question: "Which of the following is a NoSQL database?", options: ["MySQL", "PostgreSQL", "MongoDB", "SQLite"], answer: 2, skill: "database", difficulty: "easy" },
+    { type: "text", question: "Explain the concept of 'load balancing'.", keywords: ["traffic", "distribution", "servers"], skill: "devops", difficulty: "medium", hint: "Distributing network traffic across multiple servers." },
+    { type: "mcq", question: "What does the 'cors' package do in Node.js?", options: ["Enables Cross-Origin Resource Sharing", "Compresses responses", "Logs requests", "Manages cookies"], answer: 0, skill: "node", difficulty: "medium" },
+    { type: "text", question: "What is a microservice architecture?", keywords: ["independent", "services", "distributed"], skill: "architecture", difficulty: "hard", hint: "Breaking an application into small, independent services." },
+    { type: "mcq", question: "Which protocol is used for secure communication over the internet?", options: ["HTTP", "FTP", "HTTPS", "SMTP"], answer: 2, skill: "security", difficulty: "easy" }
+  ],
+  react: [
+    { type: "text", question: "What is JSX?", keywords: ["javascript", "xml", "syntax"], skill: "react", difficulty: "easy", hint: "JavaScript XML – syntax extension for React." },
+    { type: "mcq", question: "Which hook is used for state in functional components?", options: ["useState", "useEffect", "useContext", "useReducer"], answer: 0, skill: "react", difficulty: "easy" },
+    { type: "text", question: "Explain the purpose of the 'key' prop in lists.", keywords: ["identify", "render", "performance"], skill: "react", difficulty: "easy", hint: "Helps React identify which items have changed." },
+    { type: "mcq", question: "What does the 'useEffect' hook return?", options: ["A cleanup function", "A state value", "A JSX element", "Nothing"], answer: 0, skill: "react", difficulty: "medium" },
+    { type: "text", question: "What is the difference between props and state?", keywords: ["readonly", "internal", "data"], skill: "react", difficulty: "medium", hint: "Props are read‑only, state is internal." },
+    { type: "mcq", question: "Which method is used to render multiple elements in React?", options: ["map()", "forEach()", "filter()", "reduce()"], answer: 0, skill: "react", difficulty: "easy" },
+    { type: "text", question: "Explain the concept of 'lifting state up'.", keywords: ["shared", "parent", "common"], skill: "react", difficulty: "medium", hint: "Moving state to a common ancestor." },
+    { type: "mcq", question: "What is the purpose of React Router?", options: ["Navigation", "State management", "Styling", "API calls"], answer: 0, skill: "react", difficulty: "easy" },
+    { type: "text", question: "What are controlled components?", keywords: ["input", "state", "value"], skill: "react", difficulty: "medium", hint: "Form inputs controlled by React state." },
+    { type: "mcq", question: "Which hook is used to access the DOM element?", options: ["useRef", "useState", "useEffect", "useContext"], answer: 0, skill: "react", difficulty: "medium" }
+  ],
+  node: [
+    { type: "text", question: "What is Node.js?", keywords: ["javascript", "runtime", "v8"], skill: "node", difficulty: "easy", hint: "JavaScript runtime built on Chrome's V8." },
+    { type: "mcq", question: "Which module is used to create a web server in Node?", options: ["http", "fs", "path", "url"], answer: 0, skill: "node", difficulty: "easy" },
+    { type: "text", question: "Explain the event loop in Node.js.", keywords: ["async", "callback", "single-threaded"], skill: "node", difficulty: "medium", hint: "Handles asynchronous callbacks." },
+    { type: "mcq", question: "What does the 'express.json()' middleware do?", options: ["Parses JSON bodies", "Serves static files", "Logs requests", "Compresses responses"], answer: 0, skill: "node", difficulty: "medium" },
+    { type: "text", question: "What is the difference between 'require' and 'import'?", keywords: ["commonjs", "es6", "module"], skill: "node", difficulty: "medium", hint: "CommonJS vs ES modules." },
+    { type: "mcq", question: "Which command is used to install a package globally?", options: ["npm install -g", "npm install --save", "npm install --dev", "npm link"], answer: 0, skill: "node", difficulty: "easy" },
+    { type: "text", question: "Explain the concept of 'middleware' in Express.", keywords: ["request", "response", "next"], skill: "node", difficulty: "medium", hint: "Functions that run during request/response cycle." },
+    { type: "mcq", question: "What is the purpose of 'package.json'?", options: ["Manage dependencies", "Run scripts", "Both A and B", "Store environment variables"], answer: 2, skill: "node", difficulty: "easy" },
+    { type: "text", question: "What is the 'fs' module used for?", keywords: ["file", "system", "read", "write"], skill: "node", difficulty: "easy", hint: "File system operations." },
+    { type: "mcq", question: "Which method is used to handle asynchronous errors in Express?", options: ["try/catch", ".catch()", "next(error)", "All of the above"], answer: 3, skill: "node", difficulty: "hard" }
+  ],
+  python: [
+    { type: "text", question: "What is Python?", keywords: ["interpreted", "high-level", "language"], skill: "python", difficulty: "easy", hint: "High‑level interpreted language." },
+    { type: "mcq", question: "Which keyword is used to define a function in Python?", options: ["def", "function", "func", "define"], answer: 0, skill: "python", difficulty: "easy" },
+    { type: "text", question: "Explain list comprehension.", keywords: ["list", "concise", "iteration"], skill: "python", difficulty: "easy", hint: "Concise way to create lists." },
+    { type: "mcq", question: "What is the output of 'print(2**3)'?", options: ["6", "8", "9", "5"], answer: 1, skill: "python", difficulty: "easy" },
+    { type: "text", question: "What is the difference between a list and a tuple?", keywords: ["mutable", "immutable", "sequence"], skill: "python", difficulty: "medium", hint: "Mutable vs immutable." },
+    { type: "mcq", question: "Which module is used for regular expressions in Python?", options: ["re", "regex", "regexp", "pyregex"], answer: 0, skill: "python", difficulty: "medium" },
+    { type: "text", question: "Explain decorators in Python.", keywords: ["function", "modify", "syntax"], skill: "python", difficulty: "hard", hint: "Functions that modify other functions." },
+    { type: "mcq", question: "What is a virtual environment in Python?", options: ["Isolated Python environment", "A cloud IDE", "A debugger", "A package manager"], answer: 0, skill: "python", difficulty: "medium" },
+    { type: "text", question: "What is PEP 8?", keywords: ["style", "guide", "conventions"], skill: "python", difficulty: "easy", hint: "Python style guide." },
+    { type: "mcq", question: "Which statement is used to handle exceptions in Python?", options: ["try/except", "try/catch", "throw/catch", "error/handle"], answer: 0, skill: "python", difficulty: "easy" }
+  ],
+  java: [
+    { type: "text", question: "Explain OOP principles in Java.", keywords: ["encapsulation", "inheritance", "polymorphism", "abstraction"], skill: "java", difficulty: "easy", hint: "Encapsulation, inheritance, polymorphism, abstraction." },
+    { type: "mcq", question: "Which keyword is used to inherit a class in Java?", options: ["extends", "implements", "inherits", "super"], answer: 0, skill: "java", difficulty: "easy" },
+    { type: "text", question: "What is the JVM?", keywords: ["java", "virtual", "machine"], skill: "java", difficulty: "easy", hint: "Java Virtual Machine – runs bytecode." },
+    { type: "mcq", question: "What is the default value of a boolean in Java?", options: ["true", "false", "null", "0"], answer: 1, skill: "java", difficulty: "medium" },
+    { type: "text", question: "Explain the difference between an interface and an abstract class.", keywords: ["abstract", "interface", "methods"], skill: "java", difficulty: "medium", hint: "Interfaces have only abstract methods (before Java 8)." },
+    { type: "mcq", question: "Which collection is synchronized in Java?", options: ["ArrayList", "HashSet", "Vector", "HashMap"], answer: 2, skill: "java", difficulty: "hard" },
+    { type: "text", question: "What is multithreading in Java?", keywords: ["thread", "concurrent", "parallel"], skill: "java", difficulty: "medium", hint: "Running multiple threads concurrently." },
+    { type: "mcq", question: "Which package contains the 'Scanner' class?", options: ["java.util", "java.io", "java.lang", "java.net"], answer: 0, skill: "java", difficulty: "easy" },
+    { type: "text", question: "Explain the 'finally' block in exception handling.", keywords: ["exception", "finally", "always"], skill: "java", difficulty: "medium", hint: "Always executes, regardless of exception." },
+    { type: "mcq", question: "What does the 'static' keyword mean?", options: ["Belongs to class, not instance", "Cannot be changed", "Only one instance", "Final variable"], answer: 0, skill: "java", difficulty: "easy" }
+  ],
+  dsa: [
+    { type: "text", question: "What is a data structure?", keywords: ["organize", "store", "data"], skill: "dsa", difficulty: "easy", hint: "A way to store and organize data." },
+    { type: "mcq", question: "Which data structure uses LIFO?", options: ["Queue", "Stack", "Array", "LinkedList"], answer: 1, skill: "dsa", difficulty: "easy" },
+    { type: "text", question: "Explain the difference between an array and a linked list.", keywords: ["contiguous", "memory", "nodes"], skill: "dsa", difficulty: "easy", hint: "Contiguous vs non‑contiguous memory." },
+    { type: "mcq", question: "What is the time complexity of binary search on a sorted array?", options: ["O(n)", "O(log n)", "O(n^2)", "O(1)"], answer: 1, skill: "dsa", difficulty: "medium" },
+    { type: "text", question: "What is recursion?", keywords: ["function", "calls", "itself"], skill: "dsa", difficulty: "easy", hint: "Function calling itself." },
+    { type: "mcq", question: "Which sorting algorithm has the best average time complexity?", options: ["Bubble sort", "Quick sort", "Insertion sort", "Selection sort"], answer: 1, skill: "dsa", difficulty: "medium" },
+    { type: "text", question: "Explain Big O notation.", keywords: ["complexity", "upper bound", "performance"], skill: "dsa", difficulty: "medium", hint: "Describes upper bound of complexity." },
+    { type: "mcq", question: "What is a hash table?", options: ["Key‑value store", "Sorted list", "Tree structure", "Graph"], answer: 0, skill: "dsa", difficulty: "medium" },
+    { type: "text", question: "What is a binary search tree?", keywords: ["left", "right", "sorted"], skill: "dsa", difficulty: "hard", hint: "Tree where left child < parent < right child." },
+    { type: "mcq", question: "Which data structure is used for BFS?", options: ["Queue", "Stack", "Heap", "Graph"], answer: 0, skill: "dsa", difficulty: "medium" }
+  ]
+};
 
-/* ================= ENGLISH MCQ ================= */
-const englishMCQ = [ /* ... your existing ... */ ];
+// MCQ banks
+const englishMCQ = [
+  { type: "mcq", question: "Choose synonym of Rapid", options: ["Slow", "Fast", "Heavy", "Late"], answer: 1, skill: "english" },
+  { type: "mcq", question: "Fill blank: She ___ to school daily.", options: ["go", "goes", "gone", "going"], answer: 1, skill: "english" },
+  { type: "mcq", question: "Antonym of Honest", options: ["Truthful", "Loyal", "Dishonest", "Kind"], answer: 2, skill: "english" },
+  { type: "mcq", question: "Correct spelling", options: ["Definately", "Definitely", "Definetly", "Definatly"], answer: 1, skill: "english" },
+  { type: "mcq", question: "One who writes poems", options: ["Poet", "Painter", "Singer", "Writer"], answer: 0, skill: "english" }
+];
 
-/* ================= APTITUDE MCQ ================= */
-const aptitudeMCQ = [ /* ... your existing ... */ ];
+const aptitudeMCQ = [
+  { type: "mcq", question: "2x = 10 find x", options: ["2", "5", "10", "20"], answer: 1, skill: "aptitude" },
+  { type: "mcq", question: "15% of 200", options: ["20", "25", "30", "40"], answer: 2, skill: "aptitude" },
+  { type: "mcq", question: "Average of 10 and 20", options: ["15", "20", "10", "25"], answer: 0, skill: "aptitude" },
+  { type: "mcq", question: "Speed formula", options: ["Distance/Time", "Time/Distance", "Distance*Time", "None"], answer: 0, skill: "aptitude" },
+  { type: "mcq", question: "2^3 equals", options: ["6", "8", "9", "4"], answer: 1, skill: "aptitude" }
+];
+
+const router = express.Router();
 
 /* ================= GENERATE QUESTIONS ================= */
-router.post('/generate', authMiddleware, (req, res) => {
+router.post('/generate', authMiddleware, async (req, res) => {
   const { role, type, difficulty = 'medium' } = req.body;
+
+  // If English or Aptitude, use static banks
   if (type === "english") return res.json({ questions: englishMCQ });
   if (type === "aptitude") return res.json({ questions: aptitudeMCQ });
-  const allQuestions = technicalQuestions[role] || technicalQuestions.frontend;
-  const filtered = allQuestions.filter(q => q.difficulty === difficulty);
-  res.json({ questions: filtered.length ? filtered : allQuestions });
+
+  try {
+    // Try to generate 5 AI questions
+    const questions = [];
+    for (let i = 0; i < 5; i++) {
+      const q = await generateQuestion(role, difficulty);
+      questions.push(q);
+    }
+    res.json({ questions });
+  } catch (error) {
+    console.error('AI generation failed, using fallback questions:', error);
+    // Fallback to static bank
+    const allQuestions = technicalQuestions[role] || technicalQuestions.frontend;
+    const filtered = allQuestions.filter(q => q.difficulty === difficulty);
+    res.json({ questions: filtered.length ? filtered : allQuestions });
+  }
 });
 
 /* ================= GET HINT ================= */
@@ -101,7 +240,7 @@ router.get('/hint', authMiddleware, (req, res) => {
   res.json({ hint: question?.hint || "No hint available." });
 });
 
-/* ================= EVALUATE ANSWER (Enhanced with keyword matching) ================= */
+/* ================= EVALUATE ANSWER ================= */
 router.post('/evaluate', authMiddleware, async (req, res) => {
   const { answer, questionObj, timeSpent } = req.body;
 
@@ -109,16 +248,14 @@ router.post('/evaluate', authMiddleware, async (req, res) => {
   let feedback = [];
 
   if (questionObj.type === 'mcq') {
-    // MCQ evaluation (unchanged)
     const isCorrect = (parseInt(answer) === questionObj.answer);
     score = isCorrect ? 10 : 0;
     feedback = isCorrect ? ['Correct!'] : ['Wrong answer.'];
   } else if (questionObj.type === 'coding') {
-    // Coding questions: we can't easily evaluate without a full judge, so keep simple
+    // Simple simulation – you could integrate a real code judge
     score = answer.length > 50 ? 8 : 5;
     feedback = ['Code evaluated (simulated).'];
   } else {
-    // Text answer: use keyword‑based evaluation
     const keywords = questionObj.keywords || [];
     const result = evaluateAnswer(answer, keywords);
     score = result.score;
