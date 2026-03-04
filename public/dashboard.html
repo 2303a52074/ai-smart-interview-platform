@@ -216,15 +216,18 @@ color:black;
 
 <div class="sidebar">
 <h2>AI Smart</h2>
+
 <button onclick="showSection('dashboard')">Dashboard</button>
 <button onclick="showSection('resume')">Resume Analyzer</button>
 <button onclick="showSection('interview')">Interview</button>
 <button onclick="showSection('history')">History</button>
 <button onclick="showSection('analytics')">Analytics</button>
 <button onclick="showSection('profile')">Profile</button>
+
+<button onclick="logout()">Logout</button>
+
 <button onclick="toggleMode()">Toggle Theme</button>
 </div>
-
 <div class="main">
 
 <!-- DASHBOARD -->
@@ -334,6 +337,12 @@ if(id==="profile")loadProfile();
 }
 
 function toggleMode(){document.body.classList.toggle("dark");}
+function logout(){
+    if(confirm("Are you sure you want to logout?")){
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+    }
+}
 
 /* ================= INTERVIEW ================= */
 async function startInterview(){
