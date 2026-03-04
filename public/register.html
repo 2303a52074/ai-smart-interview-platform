@@ -234,6 +234,19 @@
             display: block;
         }
 
+        /* Copyright footer (new) */
+        .copyright {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
         /* Responsive */
         @media (max-width: 500px) {
             .register-card {
@@ -313,6 +326,11 @@
         </div>
     </div>
 
+    <!-- Copyright footer -->
+    <div class="copyright">
+        © 2025 AI Based Smart Interview. All rights reserved.
+    </div>
+
     <script>
         const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
 
@@ -338,7 +356,7 @@
             }
         }
 
-        // Register function (adapted from your original)
+        // Register function
         async function register() {
             const errorBox = document.getElementById("errorBox");
             errorBox.innerText = "";
@@ -349,7 +367,6 @@
             const password = document.getElementById("password").value.trim();
             const confirmPassword = document.getElementById("confirmPassword").value.trim();
 
-            // Validation
             if (!name || !email || !password || !confirmPassword) {
                 errorBox.innerText = "Please fill in all fields.";
                 errorBox.classList.add("show");
@@ -378,8 +395,6 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    // Auto-login after successful registration (optional)
-                    // You can redirect to login page with a success message
                     alert("Registration successful! Please log in.");
                     window.location.href = "login.html";
                 } else {

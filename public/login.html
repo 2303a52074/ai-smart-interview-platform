@@ -240,6 +240,19 @@
             display: block;
         }
 
+        /* Copyright footer (new) */
+        .copyright {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
         /* Responsive */
         @media (max-width: 500px) {
             .login-card {
@@ -302,6 +315,11 @@
         <div class="register-text">
             Don't have an account? <a href="register.html">Register</a>
         </div>
+    </div>
+
+    <!-- Copyright footer -->
+    <div class="copyright">
+        © 2025 AI Based Smart Interview. All rights reserved.
     </div>
 
     <script>

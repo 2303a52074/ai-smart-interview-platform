@@ -41,6 +41,9 @@
             transition:0.4s ease;
             overflow-x:hidden;
             position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Particle Canvas */
@@ -54,7 +57,7 @@
             pointer-events: none;
         }
 
-        /* 3D floating shapes (new) */
+        /* 3D floating shapes */
         .shape {
             position: absolute;
             border-radius: 50%;
@@ -127,7 +130,7 @@
 
         .btn{
             padding:12px 22px;
-            border-radius:40px; /* more modern */
+            border-radius:40px;
             border:none;
             cursor:pointer;
             font-size:14px;
@@ -251,7 +254,7 @@
             line-height: 1.5;
         }
 
-        /* Pricing section (original, restyled) */
+        /* Pricing section */
         .pricing {
             display: flex;
             justify-content: space-between;
@@ -288,45 +291,40 @@
             margin: 10px 0;
         }
 
+        /* Footer / Copyright */
+        .copyright {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
         /* Responsive */
         @media (max-width: 1000px) {
-            .hero-left h1 {
-                font-size: 3rem;
-            }
-            .features {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .pricing {
-                flex-direction: column;
-            }
+            .hero-left h1 { font-size: 3rem; }
+            .features { grid-template-columns: repeat(2, 1fr); }
+            .pricing { flex-direction: column; }
         }
         @media (max-width: 600px) {
-            .main-container {
-                padding: 40px 25px;
-            }
-            .hero-left h1 {
-                font-size: 2.5rem;
-            }
-            .features {
-                grid-template-columns: 1fr;
-            }
-            .navbar {
-                flex-direction: column;
-                gap: 10px;
-            }
+            .main-container { padding: 40px 25px; }
+            .hero-left h1 { font-size: 2.5rem; }
+            .features { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
 <body>
-    <!-- Particle canvas (from original) -->
+    <!-- Particle canvas -->
     <canvas id="particles"></canvas>
 
-    <!-- 3D floating shapes (new) -->
+    <!-- 3D floating shapes -->
     <div class="shape shape1"></div>
     <div class="shape shape2"></div>
     <div class="shape shape3"></div>
 
-    <!-- Navbar (updated with icon) -->
+    <!-- Navbar -->
     <div class="navbar">
         <div class="logo">
             <i class="fas fa-robot"></i>
@@ -361,13 +359,13 @@
                     </button>
                 </div>
             </div>
-            <!-- Optional illustration – you can replace with an image -->
+            <!-- Optional illustration -->
             <div style="flex:1; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-chart-pie" style="font-size: 200px; color: var(--accent); opacity: 0.5;"></i>
             </div>
         </div>
 
-        <!-- Feature cards (exactly 4 items) -->
+        <!-- Feature cards -->
         <div class="features">
             <div class="feature-card">
                 <div class="feature-icon"><i class="fas fa-bolt"></i></div>
@@ -391,7 +389,7 @@
             </div>
         </div>
 
-        <!-- Pricing section (original, restyled) -->
+        <!-- Pricing section -->
         <div class="pricing">
             <div class="price-card">
                 <h2>Free</h2>
@@ -417,18 +415,23 @@
         </div>
     </div>
 
+    <!-- Copyright footer -->
+    <div class="copyright">
+        © 2025 AI Based Smart Interview. All rights reserved.
+    </div>
+
     <script>
-        // GSAP animations (from original)
+        // GSAP animations
         gsap.from(".hero-left", {opacity:0, y:80, duration:1.2});
         gsap.from(".features", {opacity:0, y:60, duration:1.2, delay:0.3});
         gsap.from(".pricing", {opacity:0, y:60, duration:1.2, delay:0.6});
 
-        // Theme toggle (from original)
+        // Theme toggle
         function toggleTheme(){
             document.body.classList.toggle("light");
         }
 
-        /* Particle Background (original, enhanced) */
+        // Particle Background
         const canvas = document.getElementById("particles");
         const ctx = canvas.getContext("2d");
         canvas.width = window.innerWidth;
@@ -461,7 +464,6 @@
         }
         animate();
 
-        // Resize handler
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
