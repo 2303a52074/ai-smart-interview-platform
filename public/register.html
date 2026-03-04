@@ -1,134 +1,396 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register - AI Based Smart Interview</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <title>Register · AI Based Smart Interview</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body{
-            background:#0f0f18;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-            font-family:'Inter',sans-serif;
-            color:white;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .card{
-            width:350px;
-            padding:40px;
-            border-radius:20px;
-            background:rgba(255,255,255,0.05);
-            backdrop-filter:blur(20px);
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0c0b1a 0%, #1a1a2f 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        h2{
-            margin-bottom:25px;
-            text-align:center;
+        /* 3D floating shapes (same as login) */
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(124, 92, 255, 0.15);
+            filter: blur(60px);
+            z-index: 0;
+        }
+        .shape1 {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            left: -100px;
+            background: #7c5cff;
+            opacity: 0.3;
+        }
+        .shape2 {
+            width: 500px;
+            height: 500px;
+            bottom: -150px;
+            right: -50px;
+            background: #ff6b9d;
+            opacity: 0.2;
+        }
+        .shape3 {
+            width: 300px;
+            height: 300px;
+            top: 40%;
+            right: 15%;
+            background: #4ecdc4;
+            opacity: 0.15;
+            filter: blur(70px);
         }
 
-        input{
-            width:100%;
-            padding:12px;
-            margin-bottom:15px;
-            border-radius:10px;
-            border:none;
-            outline:none;
+        /* Main glass card */
+        .register-card {
+            width: 500px;
+            max-width: 100%;
+            background: rgba(20, 20, 35, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 48px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 50px 40px;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.4s ease;
+            color: white;
         }
 
-        button{
-            width:100%;
-            padding:12px;
-            border-radius:10px;
-            border:none;
-            background:linear-gradient(90deg,#7c5cff,#a66cff);
-            color:white;
-            cursor:pointer;
+        .register-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
         }
 
-        p{
-            margin-top:15px;
-            text-align:center;
+        /* Logo & header */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .logo i {
+            color: #7c5cff;
+            font-size: 2.2rem;
+            filter: drop-shadow(0 10px 15px #7c5cff80);
         }
 
-        a{
-            color:#a66cff;
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #d9d0ff 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .error{
-            margin-top:10px;
-            color:#ff6b6b;
-            text-align:center;
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            font-size: 1rem;
         }
 
-        .success{
-            margin-top:10px;
-            color:#4caf50;
-            text-align:center;
+        /* Input fields */
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 4px 20px;
+            transition: all 0.3s;
+        }
+        .input-wrapper:hover,
+        .input-wrapper:focus-within {
+            border-color: #7c5cff;
+            background: rgba(124, 92, 255, 0.1);
+            box-shadow: 0 0 20px rgba(124, 92, 255, 0.3);
+        }
+        .input-wrapper i {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.2rem;
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+        .input-wrapper input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 16px 0;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .input-wrapper input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 400;
+        }
+        /* Password toggle icon */
+        .toggle-password {
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+            transition: 0.2s;
+            margin-left: 10px;
+        }
+        .toggle-password:hover {
+            color: #7c5cff;
+        }
+
+        /* Register button */
+        .register-btn {
+            width: 100%;
+            background: linear-gradient(145deg, #7c5cff, #6240e0);
+            border: none;
+            border-radius: 60px;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 25px 0 20px;
+            box-shadow: 0 15px 30px -10px #7c5cff;
+            border: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .register-btn:hover {
+            background: linear-gradient(145deg, #8a6eff, #7355f0);
+            transform: scale(1.02);
+            box-shadow: 0 20px 35px -8px #7c5cff;
+        }
+
+        /* Login link */
+        .login-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        .login-text a {
+            color: #7c5cff;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .login-text a:hover {
+            text-decoration: underline;
+            color: #a185ff;
+        }
+
+        /* Error box */
+        .error {
+            margin-top: 15px;
+            color: #ff6b6b;
+            text-align: center;
+            font-size: 0.95rem;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            display: none;
+        }
+        .error.show {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .register-card {
+                padding: 40px 25px;
+            }
+            h2 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Background shapes -->
+    <div class="shape shape1"></div>
+    <div class="shape shape2"></div>
+    <div class="shape shape3"></div>
 
-<div class="card">
-    <h2>Create Account</h2>
+    <!-- Register Card -->
+    <div class="register-card" id="registerCard">
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <span>AI Smart</span>
+        </div>
+        <h2>Create Account</h2>
+        <div class="subtitle">Start your interview preparation journey</div>
 
-    <input type="text" id="name" placeholder="Full Name">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+        <!-- Name field -->
+        <div class="input-group">
+            <label>Full Name</label>
+            <div class="input-wrapper">
+                <i class="fas fa-user"></i>
+                <input type="text" id="name" placeholder="John Doe">
+            </div>
+        </div>
 
-    <button onclick="register()">Register</button>
+        <!-- Email field -->
+        <div class="input-group">
+            <label>Email</label>
+            <div class="input-wrapper">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" placeholder="you@example.com">
+            </div>
+        </div>
 
-    <div class="error" id="errorBox"></div>
-    <div class="success" id="successBox"></div>
+        <!-- Password field with toggle -->
+        <div class="input-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="••••••••">
+                <i class="fas fa-eye toggle-password" onclick="togglePassword('password', this)"></i>
+            </div>
+        </div>
 
-    <p>Already have an account? <a href="login.html">Login</a></p>
-</div>
+        <!-- Confirm Password field with toggle -->
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <div class="input-wrapper">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="confirmPassword" placeholder="••••••••">
+                <i class="fas fa-eye toggle-password" onclick="togglePassword('confirmPassword', this)"></i>
+            </div>
+        </div>
 
-<script>
-const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
-async function register(){
+        <!-- Register button -->
+        <button class="register-btn" onclick="register()">
+            <span>Register</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
 
-    const errorBox = document.getElementById("errorBox");
-    const successBox = document.getElementById("successBox");
+        <!-- Error container -->
+        <div class="error" id="errorBox"></div>
 
-    errorBox.innerText = "";
-    successBox.innerText = "";
+        <!-- Login link -->
+        <div class="login-text">
+            Already have an account? <a href="login.html">Log in</a>
+        </div>
+    </div>
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    <script>
+        const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
 
-    if(!name || !email || !password){
-        errorBox.innerText = "Please fill all fields.";
-        return;
-    }
-
-    try{
-
-        const res = await fetch(BASE_URL + '/api/auth/register',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({name,email,password})
+        // GSAP entrance animation
+        gsap.from("#registerCard", {
+            duration: 1,
+            y: 40,
+            opacity: 0,
+            ease: "power3.out"
         });
 
-        const data = await res.json();
-
-        if(res.ok){
-            successBox.innerText = "Registration successful. Redirecting to login...";
-            setTimeout(()=>{
-                window.location.href="login.html";
-            },1500);
-        }else{
-            errorBox.innerText = data.message || "Registration failed.";
+        // Toggle password visibility
+        function togglePassword(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
         }
 
-    }catch(err){
-        errorBox.innerText = "Server not responding.";
-    }
-}
-</script>
+        // Register function (adapted from your original)
+        async function register() {
+            const errorBox = document.getElementById("errorBox");
+            errorBox.innerText = "";
+            errorBox.classList.remove("show");
 
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+            // Validation
+            if (!name || !email || !password || !confirmPassword) {
+                errorBox.innerText = "Please fill in all fields.";
+                errorBox.classList.add("show");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorBox.innerText = "Passwords do not match.";
+                errorBox.classList.add("show");
+                return;
+            }
+
+            if (password.length < 6) {
+                errorBox.innerText = "Password must be at least 6 characters.";
+                errorBox.classList.add("show");
+                return;
+            }
+
+            try {
+                const res = await fetch(BASE_URL + '/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Auto-login after successful registration (optional)
+                    // You can redirect to login page with a success message
+                    alert("Registration successful! Please log in.");
+                    window.location.href = "login.html";
+                } else {
+                    errorBox.innerText = data.message || "Registration failed.";
+                    errorBox.classList.add("show");
+                }
+            } catch (err) {
+                errorBox.innerText = "Server not responding. Please try again.";
+                errorBox.classList.add("show");
+            }
+        }
+    </script>
 </body>
 </html>
