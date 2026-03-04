@@ -6,45 +6,11 @@ const natural = require('natural');
 const { WordTokenizer, PorterStemmer } = natural;
 const tokenizer = new WordTokenizer();
 
-// AI question generator (transformers)
-const { pipeline } = require('@xenova/transformers');
-let generator = null;
+// Import AI service functions
+const { generateQuestion, evaluateAnswer } = require('../utils/aiService');
 
-async function getGenerator() {
-  if (!generator) {
-    console.log('Loading AI model (first time may take a few seconds)...');
-    generator = await pipeline('text2text-generation', 'Xenova/t5-small');
-    console.log('AI model loaded.');
-  }
-  return generator;
-}
-
-/**
- * Generate an interview question using AI
- */
-async function generateQuestion(role, difficulty) {
-  const gen = await getGenerator();
-  const prompt = `Generate a technical interview question for a ${difficulty} level ${role} developer. The question should be clear and specific.`;
-  const result = await gen(prompt, {
-    max_length: 60,
-    temperature: 0.7,
-    do_sample: true,
-  });
-  let questionText = result[0].generated_text.trim();
-  // Clean common prefixes
-  questionText = questionText.replace(/^question:/i, '').trim();
-  return {
-    type: 'text',
-    question: questionText,
-    skill: role,
-    difficulty: difficulty,
-    keywords: [], // AI-generated questions don't have predefined keywords; evaluation will be generic
-    hint: `Think about the core concepts of ${role}.`,
-  };
-}
-
-// ----------------------------- Helper: Evaluate answer with keywords -----------------------------
-function evaluateAnswer(answer, keywords, minLength = 20) {
+// ----------------------------- Helper: Evaluate answer with keywords (fallback) -----------------------------
+function evaluateAnswerFallback(answer, keywords, minLength = 20) {
   if (!answer || answer.trim().length === 0) {
     return { score: 0, feedback: ['No answer provided.'] };
   }
@@ -67,7 +33,6 @@ function evaluateAnswer(answer, keywords, minLength = 20) {
 
   let feedback = [];
   if (keywords.length === 0) {
-    // No keywords (AI questions) – give generic feedback based on length
     feedback.push(answer.length > 50 ? 'Good detail.' : 'Try to elaborate more.');
   } else {
     if (matchedCount === 0) {
@@ -99,7 +64,7 @@ function calculateXP(score, difficulty) {
   return Math.round(base * multiplier);
 }
 
-/* ================= STATIC QUESTION BANKS (FALLBACK) ================= */
+/* ================= FULL STATIC QUESTION BANKS (FALLBACK) ================= */
 const technicalQuestions = {
   frontend: [
     { type: "text", question: "What is the Virtual DOM in React?", keywords: ["virtual dom", "react", "update"], skill: "react", difficulty: "easy", hint: "A lightweight copy of the real DOM for performance." },
@@ -244,25 +209,25 @@ router.get('/hint', authMiddleware, (req, res) => {
 router.post('/evaluate', authMiddleware, async (req, res) => {
   const { answer, questionObj, timeSpent } = req.body;
 
-  let score = 0;
-  let feedback = [];
-
+  // For MCQ, handle directly
   if (questionObj.type === 'mcq') {
     const isCorrect = (parseInt(answer) === questionObj.answer);
-    score = isCorrect ? 10 : 0;
-    feedback = isCorrect ? ['Correct!'] : ['Wrong answer.'];
-  } else if (questionObj.type === 'coding') {
-    // Simple simulation – you could integrate a real code judge
-    score = answer.length > 50 ? 8 : 5;
-    feedback = ['Code evaluated (simulated).'];
-  } else {
-    const keywords = questionObj.keywords || [];
-    const result = evaluateAnswer(answer, keywords);
-    score = result.score;
-    feedback = result.feedback;
+    const score = isCorrect ? 10 : 0;
+    const feedback = isCorrect ? ['Correct!'] : ['Wrong answer.'];
+    return res.json({ score, feedback });
   }
 
-  res.json({ score, feedback });
+  // For text questions, use AI evaluation
+  try {
+    const { score, feedback } = await evaluateAnswer(questionObj.question, answer);
+    res.json({ score, feedback: [feedback] }); // keep array format for frontend
+  } catch (error) {
+    console.error('AI evaluation failed, using fallback:', error);
+    // Fallback to keyword‑based evaluation
+    const keywords = questionObj.keywords || [];
+    const result = evaluateAnswerFallback(answer, keywords);
+    res.json(result);
+  }
 });
 
 /* ================= SAVE INTERVIEW ================= */
