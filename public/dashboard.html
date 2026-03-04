@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AI Smart Interview Platform · Enhanced</title>
+  <title>AI Smart Interview Platform · Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Chart.js & jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -242,7 +242,7 @@
 </head>
 <body>
 
-<!-- Sidebar (same as before) -->
+<!-- Sidebar -->
 <div class="sidebar">
   <h2><i class="fas fa-robot"></i> <span>AI Smart</span></h2>
   <button onclick="showSection('dashboard')"><i class="fas fa-home"></i> <span>Dashboard</span></button>
@@ -259,7 +259,7 @@
 <!-- Main Content -->
 <div class="main" id="mainContent">
 
-  <!-- DASHBOARD (with new Personal AI card) -->
+  <!-- DASHBOARD -->
   <div id="dashboardSection">
     <h1>Overview</h1>
     <div class="summary">
@@ -292,7 +292,7 @@
       <p id="aiInsight">Based on your last interview, focus on system design questions.</p>
     </div>
 
-    <!-- NEW: Personal AI Coach Coming Soon -->
+    <!-- Personal AI Coach Coming Soon -->
     <div class="card" style="border: 2px dashed #7c5cff;">
       <h3><i class="fas fa-user-graduate"></i> Personal AI Coach</h3>
       <p style="font-size: 1.2rem; opacity: 0.8;">✨ Coming Soon ✨</p>
@@ -300,7 +300,7 @@
     </div>
   </div>
 
-  <!-- RESUME ANALYZER (unchanged) -->
+  <!-- RESUME ANALYZER -->
   <div id="resumeSection" class="card" style="display:none">
     <h2><i class="fas fa-file-alt"></i> Resume Analyzer</h2>
     <input type="file" id="resumeFile" accept=".pdf,.docx,.txt">
@@ -310,14 +310,25 @@
     <div id="jobSuggestions"></div>
   </div>
 
-  <!-- INTERVIEW (now with MCQ & coding support) -->
+  <!-- INTERVIEW (with Difficulty) -->
   <div id="interviewSection" class="card" style="display:none">
     <h2><i class="fas fa-comments"></i> AI Interview</h2>
     <div class="avatar">🤖</div>
     <select id="role">
-      <option value="general">General</option>
       <option value="frontend">Frontend</option>
       <option value="backend">Backend</option>
+      <option value="react">React</option>
+      <option value="node">Node.js</option>
+      <option value="python">Python</option>
+      <option value="java">Java</option>
+      <option value="dsa">DSA</option>
+      <option value="general">General</option>
+    </select>
+    <!-- NEW: Difficulty dropdown -->
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
     </select>
     <button class="btn" onclick="startInterview()">Start Interview</button>
     <div id="timer" style="margin-top:10px; font-size:20px;"></div>
@@ -327,13 +338,13 @@
     <div id="questionArea"></div>
   </div>
 
-  <!-- HISTORY (unchanged) -->
+  <!-- HISTORY -->
   <div id="historySection" class="card" style="display:none">
     <h2><i class="fas fa-history"></i> Interview History</h2>
     <div id="historyBox"></div>
   </div>
 
-  <!-- ANALYTICS (unchanged) -->
+  <!-- ANALYTICS -->
   <div id="analyticsSection" class="card" style="display:none">
     <h2><i class="fas fa-chart-line"></i> Performance Analytics</h2>
     <div style="margin-bottom:20px;">
@@ -349,7 +360,7 @@
     <div id="skillGap" style="margin-top:20px;"></div>
   </div>
 
-  <!-- PROFILE (unchanged) -->
+  <!-- PROFILE -->
   <div id="profileSection" class="card" style="display:none">
     <h2><i class="fas fa-user"></i> Profile</h2>
     <div class="avatar" id="profileAvatar">👤</div>
@@ -364,7 +375,7 @@
 <script>
   (function() {
     // ---------- STATE & CONFIG ----------
-    const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
+    const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com"; // change if needed
     const token = localStorage.getItem("token");
     if (!token) { location.href = "login.html"; }
 
@@ -414,10 +425,10 @@
       if (id === 'history') loadHistory();
     };
 
-    // ---------- DASHBOARD (with streak & badges) ----------
+    // ---------- DASHBOARD ----------
     async function loadDashboard() {
       try {
-        updatePractice(); // updates streak & practice status
+        updatePractice();
         const res = await fetch(BASE_URL + '/api/interview/history', {
           headers: { Authorization: "Bearer " + token }
         });
@@ -462,53 +473,44 @@
       document.getElementById('streak').innerText = streak;
     }
 
-    // ---------- INTERVIEW with MCQ & CODING ----------
+    // ---------- INTERVIEW with Difficulty ----------
     let questions = [], currentIndex = 0, totalScore = 0, timeLeft = 30, timerInterval;
 
-    // Mock question bank (you can replace with API call)
+    // Mock question bank (fallback if backend fails)
     function generateMockQuestions(role) {
       return [
-        {
-          type: 'mcq',
-          question: 'What does HTML stand for?',
-          options: ['Hyper Text Markup Language', 'High Tech Markup Language', 'Hyper Transfer Markup Language', 'None'],
-          correct: 0
-        },
-        {
-          type: 'mcq',
-          question: 'Which of the following is a JavaScript framework?',
-          options: ['React', 'Laravel', 'Django', 'Rails'],
-          correct: 0
-        },
-        {
-          type: 'coding',
-          question: 'Write a function that returns the sum of two numbers.',
-          language: 'javascript',
-          test: (code) => code.includes('return') && (code.includes('+') || code.includes('add'))
-        },
-        {
-          type: 'text',
-          question: 'Explain the event loop in JavaScript.'
-        }
+        { type: 'mcq', question: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'High Tech Markup Language', 'Hyper Transfer Markup Language', 'None'], correct: 0 },
+        { type: 'mcq', question: 'Which of the following is a JavaScript framework?', options: ['React', 'Laravel', 'Django', 'Rails'], correct: 0 },
+        { type: 'coding', question: 'Write a function that returns the sum of two numbers.', language: 'javascript', test: (code) => code.includes('return') && (code.includes('+') || code.includes('add')) },
+        { type: 'text', question: 'Explain the event loop in JavaScript.' }
       ];
     }
 
     window.startInterview = async function() {
       try {
-        // In a real app, you'd fetch from backend. Here we generate mock data.
-        // You can still call your API and transform response if needed.
         const role = document.getElementById('role').value;
-        // Simulate API delay
+        const difficulty = document.getElementById('difficulty').value;
         showLoading('questionArea', true);
-        setTimeout(() => {
-          questions = generateMockQuestions(role);
-          currentIndex = 0;
-          totalScore = 0;
-          showQuestion();
-          showLoading('questionArea', false);
-        }, 1000);
+        const res = await fetch(BASE_URL + '/api/interview/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: "Bearer " + token
+          },
+          body: JSON.stringify({ role, type: 'technical', difficulty })
+        });
+        const data = await res.json();
+        questions = data.questions;
+        currentIndex = 0;
+        totalScore = 0;
+        showQuestion();
       } catch (e) {
-        showToast('Failed to start interview', 'error');
+        showToast('Failed to start interview, using mock data', 'error');
+        questions = generateMockQuestions();
+        currentIndex = 0;
+        totalScore = 0;
+        showQuestion();
+      } finally {
         showLoading('questionArea', false);
       }
     };
@@ -526,7 +528,7 @@
         updateTimerDisplay();
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
-          submitAnswer(true); // auto-submit on timeout
+          submitAnswer(true);
         }
       }, 1000);
 
@@ -546,7 +548,7 @@
       }
 
       document.getElementById('questionArea').innerHTML = `
-        <h3>Question ${currentIndex+1}/${questions.length} (${q.type.toUpperCase()})</h3>
+        <h3>Question ${currentIndex+1}/${questions.length} (${q.type ? q.type.toUpperCase() : 'TEXT'})</h3>
         <p>${q.question}</p>
         ${inputHtml}
         <button class="btn" onclick="submitAnswer()">Submit</button>
@@ -591,13 +593,11 @@
           }
         } else if (q.type === 'coding') {
           answer = document.getElementById('ans').value;
-          // Simple evaluation: check if code contains return and some operator
           const passed = answer.includes('return') && (answer.includes('+') || answer.includes('add'));
           score = passed ? 8 + Math.floor(Math.random()*3) : 3 + Math.floor(Math.random()*4);
           feedback = passed ? 'Good logic! Could be more efficient.' : 'Check your syntax and logic.';
         } else {
           answer = document.getElementById('ans').value;
-          // Dummy evaluation for text
           score = answer.length > 20 ? 7 : 4;
           feedback = answer.length > 20 ? 'Good detail.' : 'Try to elaborate more.';
         }
@@ -626,7 +626,6 @@
         </button>
       `;
 
-      // Save to backend (adjust if your API expects this)
       await fetch(BASE_URL + '/api/interview/save', {
         method: 'POST',
         headers: {
@@ -635,10 +634,9 @@
         },
         body: JSON.stringify({ role: document.getElementById('role').value, totalScore: percent })
       });
-      updatePractice(); // increment streak
+      updatePractice();
     }
 
-    // PDF Report (enhanced)
     window.downloadReport = function(score) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -657,7 +655,7 @@
       doc.save('Interview_Report.pdf');
     };
 
-    // ---------- RESUME ANALYZER (unchanged) ----------
+    // ---------- RESUME ANALYZER ----------
     window.uploadResume = async function() {
       const file = document.getElementById('resumeFile').files[0];
       if (!file) return showToast('Select a file', 'warning');
@@ -688,7 +686,7 @@
       }
     };
 
-    // ---------- HISTORY (unchanged) ----------
+    // ---------- HISTORY ----------
     window.loadHistory = async function() {
       try {
         const res = await fetch(BASE_URL + '/api/interview/history', {
@@ -709,7 +707,7 @@
       }
     };
 
-    // ---------- ANALYTICS (unchanged) ----------
+    // ---------- ANALYTICS ----------
     window.loadAnalytics = async function() {
       try {
         const res = await fetch(BASE_URL + '/api/interview/history', {
@@ -766,7 +764,7 @@
       }
     };
 
-    // ---------- PROFILE (unchanged) ----------
+    // ---------- PROFILE ----------
     window.updateProfile = function() {
       const name = document.getElementById('name').value;
       const email = document.getElementById('email').value;
