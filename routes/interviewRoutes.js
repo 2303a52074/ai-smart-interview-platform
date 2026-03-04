@@ -1,8 +1,8 @@
-const express = require('express');
-const authMiddleware = require('../middleware/authMiddleware');
-const Interview = require('../models/Interview');
-
+const express = require("express");
 const router = express.Router();
+
+const authMiddleware = require("../middleware/authMiddleware");
+const Interview = require("../models/Interview");
 
 /* ---------------- TECHNICAL QUESTIONS ---------------- */
 
@@ -14,6 +14,7 @@ const technicalQuestions = {
         { question: "Explain useEffect hook.", keywords: ["useeffect","side effect","hook"] },
         { question: "What is component lifecycle?", keywords: ["mount","update","unmount"] }
     ],
+
     backend: [
         { question: "What is REST API?", keywords: ["http","api","stateless"] },
         { question: "Explain middleware in Express.", keywords: ["middleware","request","response"] },
@@ -21,6 +22,7 @@ const technicalQuestions = {
         { question: "What is MongoDB?", keywords: ["nosql","database","collection"] },
         { question: "Difference between SQL and NoSQL?", keywords: ["sql","nosql","difference"] }
     ],
+
     general: [
         { question: "Explain OOPS concepts.", keywords: ["encapsulation","inheritance","polymorphism","abstraction"] },
         { question: "What is Data Structure?", keywords: ["data","structure","algorithm"] },
@@ -33,126 +35,136 @@ const technicalQuestions = {
 /* ---------------- ENGLISH MCQ ---------------- */
 
 const englishMCQ = [
-    { question: "Choose synonym of Rapid", options: ["Slow","Fast","Heavy","Late"], answer: 1 },
-    { question: "Fill: She ___ to school daily.", options: ["go","goes","gone","going"], answer: 1 },
-    { question: "Antonym of Honest?", options: ["Truthful","Loyal","Dishonest","Kind"], answer: 2 },
-    { question: "Choose correct spelling", options: ["Definately","Definitely","Definetly","Definatly"], answer: 1 },
-    { question: "One who writes poems?", options: ["Poet","Painter","Singer","Writer"], answer: 0 }
+    { question:"Choose synonym of Rapid", options:["Slow","Fast","Heavy","Late"], answer:1 },
+    { question:"Fill: She ___ to school daily.", options:["go","goes","gone","going"], answer:1 },
+    { question:"Antonym of Honest?", options:["Truthful","Loyal","Dishonest","Kind"], answer:2 },
+    { question:"Choose correct spelling", options:["Definately","Definitely","Definetly","Definatly"], answer:1 },
+    { question:"One who writes poems?", options:["Poet","Painter","Singer","Writer"], answer:0 }
 ];
 
 /* ---------------- APTITUDE MCQ ---------------- */
 
 const aptitudeMCQ = [
-    { question: "If 2x=10, find x", options: ["2","5","10","20"], answer: 1 },
-    { question: "15% of 200?", options: ["20","25","30","40"], answer: 2 },
-    { question: "Average of 10 and 20?", options: ["15","20","10","25"], answer: 0 },
-    { question: "Speed = ?", options: ["Distance/Time","Time/Distance","Distance*Time","None"], answer: 0 },
-    { question: "2^3 = ?", options: ["6","8","9","4"], answer: 1 }
+    { question:"If 2x=10, find x", options:["2","5","10","20"], answer:1 },
+    { question:"15% of 200?", options:["20","25","30","40"], answer:2 },
+    { question:"Average of 10 and 20?", options:["15","20","10","25"], answer:0 },
+    { question:"Speed = ?", options:["Distance/Time","Time/Distance","Distance*Time","None"], answer:0 },
+    { question:"2^3 = ?", options:["6","8","9","4"], answer:1 }
 ];
 
 /* ---------------- GENERATE QUESTIONS ---------------- */
 
-router.post('/generate', authMiddleware, (req, res) => {
+router.post("/generate", authMiddleware, (req,res)=>{
 
     const { role, type } = req.body;
 
-    if(type === "english"){
+    if(type==="english"){
         return res.json({ questions: englishMCQ });
     }
 
-    if(type === "aptitude"){
+    if(type==="aptitude"){
         return res.json({ questions: aptitudeMCQ });
     }
 
     const selected = technicalQuestions[role] || technicalQuestions.general;
 
-    return res.json({ questions: selected });
+    res.json({ questions:selected });
+
 });
 
-/* ---------------- EVALUATE TECHNICAL ---------------- */
+/* ---------------- EVALUATE TECHNICAL ANSWER ---------------- */
 
-router.post('/evaluate', authMiddleware, (req, res) => {
+router.post("/evaluate", authMiddleware, (req,res)=>{
 
-    const { role, questionIndex, answer } = req.body;
+    const { answer } = req.body;
 
-    const selected = technicalQuestions[role] || technicalQuestions.general;
-    const questionData = selected[questionIndex];
+    let score = Math.floor(Math.random()*5) + 6;
 
-    if(!questionData){
-        return res.json({ score: 0, feedback: "Invalid Question" });
+    let feedback=[];
+
+    if(answer.length>120){
+        feedback.push("Good explanation length.");
+    }else{
+        feedback.push("Answer is too short. Add more explanation.");
     }
 
-    let score = 0;
-    const lower = answer.toLowerCase();
+    if(answer.toLowerCase().includes("example")){
+        feedback.push("Nice use of example.");
+    }else{
+        feedback.push("Try including a practical example.");
+    }
 
-    questionData.keywords.forEach(k=>{
-        if(lower.includes(k)) score += 20;
-    });
-
-    score = Math.min(score,100);
+    if(answer.split(" ").length<15){
+        feedback.push("Add more technical details.");
+    }
 
     res.json({
         score,
-        feedback: score >= 60 ? "Good Answer" : "Needs Improvement"
+        feedback
     });
+
 });
 
 /* ---------------- EVALUATE MCQ ---------------- */
 
-router.post('/evaluate-mcq', authMiddleware, (req, res) => {
+router.post("/evaluate-mcq", authMiddleware, (req,res)=>{
 
     const { type, questionIndex, selectedOption } = req.body;
 
-    const set = type === "english" ? englishMCQ : aptitudeMCQ;
+    const set = type==="english" ? englishMCQ : aptitudeMCQ;
 
     const correct = set[questionIndex]?.answer;
 
-    if(correct === undefined){
+    if(correct===undefined){
         return res.json({ score:0, correctAnswer:null });
     }
 
-    const score = selectedOption === correct ? 20 : 0;
+    const score = selectedOption===correct ? 20 : 0;
 
     res.json({
         score,
         correctAnswer: correct
     });
+
 });
 
 /* ---------------- SAVE INTERVIEW ---------------- */
 
-router.post('/save', authMiddleware, async (req,res)=>{
+router.post("/save", authMiddleware, async(req,res)=>{
 
-    const { role, totalScore } = req.body;
+    const { role,totalScore } = req.body;
 
     const newInterview = new Interview({
-        userId: req.user.id,
+        userId:req.user.id,
         role,
         totalScore
     });
 
     await newInterview.save();
 
-    res.json({ message:"Saved" });
+    res.json({ message:"Interview saved" });
+
 });
 
 /* ---------------- HISTORY ---------------- */
 
-router.get('/history', authMiddleware, async (req,res)=>{
+router.get("/history", authMiddleware, async(req,res)=>{
 
     const history = await Interview.find({ userId:req.user.id })
     .sort({ createdAt:-1 });
 
     res.json(history);
+
 });
 
-/* ---------------- DELETE ---------------- */
+/* ---------------- DELETE INTERVIEW ---------------- */
 
-router.delete('/delete/:id', authMiddleware, async (req,res)=>{
+router.delete("/delete/:id", authMiddleware, async(req,res)=>{
 
     await Interview.findByIdAndDelete(req.params.id);
 
-    res.json({ message:"Deleted" });
+    res.json({ message:"Interview deleted" });
+
 });
 
 module.exports = router;
