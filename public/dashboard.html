@@ -1116,18 +1116,33 @@
                         body:JSON.stringify({ role:currentRole, difficulty:currentDifficulty })
                     });
                     const data = await res.json();
-                    questions = data.questions;
+                    questions = data.questions || [];
+                    if (questions.length === 0) {
+                        showToast('No questions received. Try again.', 'error');
+                        return;
+                    }
                     currentIndex = 0;
                     totalScore = 0;
                     showQuestion();
-                } catch(e) { showToast('Failed to start interview', 'error'); }
+                } catch(e) { 
+                    showToast('Failed to start interview', 'error');
+                    console.error(e);
+                }
             }
 
             function showQuestion() {
-                if (currentIndex >= questions.length) {
+                if (!questions || currentIndex >= questions.length) {
                     finishInterview();
                     return;
                 }
+                const q = questions[currentIndex];
+                if (!q) {
+                    // Skip invalid question
+                    currentIndex++;
+                    showQuestion();
+                    return;
+                }
+
                 timeLeft = 30;
                 updateTimerDisplay();
                 clearInterval(timerInterval);
@@ -1140,7 +1155,6 @@
                     }
                 }, 1000);
 
-                const q = questions[currentIndex];
                 if (!q.type) q.type = 'text';
                 speak(q.question);
 
@@ -1188,9 +1202,11 @@
             }
 
             function speak(text) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9;
-                window.speechSynthesis.speak(utterance);
+                try {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                } catch (e) {}
             }
 
             window.skipQuestion = function() {
@@ -1217,6 +1233,12 @@
 
             window.submitAnswer = async function(isTimeout = false) {
                 clearInterval(timerInterval);
+                if (!questions || !questions[currentIndex]) {
+                    showToast('Question not available. Skipping...', 'error');
+                    currentIndex++;
+                    showQuestion();
+                    return;
+                }
                 const q = questions[currentIndex];
                 let answer = '';
                 if (!isTimeout) {
@@ -1276,14 +1298,14 @@
             async function finishInterview() {
                 window.speechSynthesis.cancel();
 
-                const percent = Math.round((totalScore / (questions.length * 10)) * 100);
-                const answers = questions.map((q, idx) => ({
+                const percent = questions && questions.length ? Math.round((totalScore / (questions.length * 10)) * 100) : 0;
+                const answers = questions ? questions.map((q, idx) => ({
                     question: q.question,
                     answer: userAnswers[idx] || '',
                     score: answerScores[idx] || 0,
                     skill: q.skill || 'general',
                     timeSpent: 30
-                }));
+                })) : [];
 
                 await fetch(BASE_URL + '/api/interview/save', {
                     method: 'POST',
@@ -1297,7 +1319,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
                         body: JSON.stringify({
-                            questions: questions.map(q => q.question),
+                            questions: questions ? questions.map(q => q.question) : [],
                             answers: userAnswers,
                             scores: answerScores
                         })
@@ -1316,7 +1338,7 @@
                                 <h4>📈 How to Improve</h4>
                                 <p>${escapeHtml(feedbackText)}</p>
                             </div>
-                            <button class="btn" onclick="downloadEnhancedReport(${percent}, ${JSON.stringify(feedbackText)})">Download Full Report (PDF)</button>
+                            <button class="btn" onclick='downloadEnhancedReport(${percent}, ${JSON.stringify(feedbackText)})'>Download Full Report (PDF)</button>
                         </div>
                     </div>
                 `;
@@ -1351,16 +1373,18 @@
                     doc.setFontSize(14);
                     doc.text('Question Details:', 20, 100);
                     let y = 110;
-                    questions.forEach((q, i) => {
-                        if (y > 270) { doc.addPage(); y = 20; }
-                        doc.setFontSize(11);
-                        doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
-                        y += 7;
-                        doc.text(`Answer: ${(userAnswers[i] || 'No answer').substring(0,50)}...`, 20, y);
-                        y += 7;
-                        doc.text(`Score: ${answerScores[i] || 0}/10`, 20, y);
-                        y += 10;
-                    });
+                    if (questions && questions.length) {
+                        questions.forEach((q, i) => {
+                            if (y > 270) { doc.addPage(); y = 20; }
+                            doc.setFontSize(11);
+                            doc.text(`Q${i+1}: ${(q.question || '').substring(0,50)}...`, 20, y);
+                            y += 7;
+                            doc.text(`Answer: ${(userAnswers[i] || 'No answer').substring(0,50)}...`, 20, y);
+                            y += 7;
+                            doc.text(`Score: ${answerScores[i] || 0}/10`, 20, y);
+                            y += 10;
+                        });
+                    }
 
                     doc.addPage();
                     doc.setFontSize(16);
@@ -1393,7 +1417,7 @@
                         body:JSON.stringify({ role, difficulty })
                     });
                     const data = await res.json();
-                    examQuestions = data.questions;
+                    examQuestions = data.questions || [];
                     examAnswers = [];
                     currentExamIndex = 0;
                     displayExam();
@@ -1415,7 +1439,7 @@
                     </div>
                 `;
                 document.getElementById('examArea').innerHTML = html;
-                renderExamQuestion(0);
+                if (examQuestions.length) renderExamQuestion(0);
             }
 
             function renderExamQuestion(index) {
@@ -1475,6 +1499,7 @@
             };
             function saveCurrentAnswer(index) {
                 const q = examQuestions[index];
+                if (!q) return;
                 if (q.type === 'mcq') {
                     const selected = document.querySelector(`input[name="q${index}"]:checked`);
                     if (selected) examAnswers[index] = selected.value;
@@ -1527,7 +1552,7 @@
                     html += `
                         <div class="result-card ${scoreClass}">
                             <div class="result-header">
-                                <span class="result-question">Q${i+1}: ${escapeHtml(q.question.substring(0,60))}${q.question.length>60?'...':''}</span>
+                                <span class="result-question">Q${i+1}: ${escapeHtml((q.question || '').substring(0,60))}${q.question && q.question.length>60?'...':''}</span>
                                 <span class="result-score">${r.score}/10</span>
                             </div>
                             <div class="result-feedback">${escapeHtml(r.feedback || (r.correct ? '✅ Correct' : '❌ Wrong'))}</div>
@@ -1536,7 +1561,7 @@
                 });
                 html += `<h3 style="margin-top:20px;">Total: ${result.totalScore}%</h3>`;
                 html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${escapeHtml(feedback)}</p></div>`;
-                html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, ${JSON.stringify(feedback)}, ${JSON.stringify(result.results)})">Download Report (PDF)</button>`;
+                html += `<button class="btn" onclick='downloadExamReport(${result.totalScore}, ${JSON.stringify(feedback)}, ${JSON.stringify(result.results)})'>Download Report (PDF)</button>`;
                 document.getElementById('examArea').innerHTML = html;
                 showToast('🎉 Exam submitted! Check your results.', 'success');
             }
@@ -1568,7 +1593,7 @@
                     examQuestions.forEach((q, i) => {
                         if (y > 270) { doc.addPage(); y = 20; }
                         doc.setFontSize(11);
-                        doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
+                        doc.text(`Q${i+1}: ${(q.question || '').substring(0,50)}...`, 20, y);
                         y += 7;
                         doc.text(`Answer: ${(examAnswers[i] || 'No answer').substring(0,50)}...`, 20, y);
                         y += 7;
