@@ -29,7 +29,7 @@
             overflow-x: hidden;
         }
 
-        /* 3D floating shapes (same as index) */
+        /* 3D floating shapes */
         .shape {
             position: absolute;
             border-radius: 50%;
@@ -85,20 +85,15 @@
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
         }
 
-        /* Header */
+        /* Logo */
         .logo {
             display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 30px;
             justify-content: center;
+            margin-bottom: 30px;
         }
-        .logo i {
-            color: #7c5cff;
-            font-size: 2.2rem;
-            filter: drop-shadow(0 10px 15px #7c5cff80);
+        .logo svg {
+            width: 160px;
+            height: auto;
         }
 
         h2 {
@@ -240,7 +235,7 @@
             display: block;
         }
 
-        /* Copyright footer (new) */
+        /* Copyright footer */
         .copyright {
             position: fixed;
             bottom: 15px;
@@ -253,14 +248,10 @@
             pointer-events: none;
         }
 
-        /* Responsive */
         @media (max-width: 500px) {
-            .login-card {
-                padding: 40px 25px;
-            }
-            h2 {
-                font-size: 1.8rem;
-            }
+            .login-card { padding: 40px 25px; }
+            h2 { font-size: 1.8rem; }
+            .logo svg { width: 120px; }
         }
     </style>
 </head>
@@ -273,8 +264,19 @@
     <!-- Login Card -->
     <div class="login-card" id="loginCard">
         <div class="logo">
-            <i class="fas fa-robot"></i>
-            <span>AI Smart</span>
+            <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="20" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
+                <circle cx="30" cy="25" r="5" fill="white"/>
+                <circle cx="50" cy="25" r="5" fill="white"/>
+                <circle cx="30" cy="25" r="2" fill="#333"/>
+                <circle cx="50" cy="25" r="2" fill="#333"/>
+                <path d="M35 35 Q40 42, 45 35" stroke="white" stroke-width="3" fill="none"/>
+                <line x1="10" y1="20" x2="25" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="10" y1="30" x2="25" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="55" y1="20" x2="70" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="55" y1="30" x2="70" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <text x="80" y="35" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
+            </svg>
         </div>
         <h2>Welcome Back</h2>
         <div class="subtitle">Log in to continue your interview journey</div>
@@ -323,8 +325,7 @@
     </div>
 
     <script>
-        // Base URL (same as your original)
-        const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com";
+        const BASE_URL = window.location.origin;
 
         // GSAP entrance animation
         gsap.from("#loginCard", {
@@ -334,7 +335,6 @@
             ease: "power3.out"
         });
 
-        // Login function (enhanced with error display)
         async function login() {
             const errorBox = document.getElementById("errorBox");
             errorBox.innerText = "";
@@ -360,6 +360,8 @@
 
                 if (res.ok) {
                     localStorage.setItem("token", data.token);
+                    // Optionally store user name
+                    if (data.user) localStorage.setItem("userName", data.user.name);
                     window.location.href = "dashboard.html";
                 } else {
                     errorBox.innerText = data.message || "Login failed.";

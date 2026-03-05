@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Monaco Editor -->
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
-    <!-- Face API (with fallback) -->
+    <!-- Face API -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * {
@@ -65,18 +65,15 @@
             flex-direction: column;
             transition: 0.3s;
         }
-        .sidebar h2 {
-            color: #9d7bff;
+        /* Logo container */
+        .sidebar .logo {
             margin-bottom: 40px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.6rem;
-            padding-left: 10px;
-            text-shadow: 0 2px 5px rgba(124,92,255,0.3);
+            justify-content: center;
         }
-        .sidebar h2 i {
-            font-size: 2rem;
+        .sidebar .logo svg {
+            width: 160px;
+            height: auto;
         }
         .sidebar button {
             width: 100%;
@@ -243,6 +240,19 @@
         .apply-btn { background: #7c5cff; border: none; border-radius: 40px; padding: 10px 20px; color: white; text-decoration: none; }
         .apply-btn:hover { background: #5f3dc4; }
 
+        /* Feedback card */
+        .feedback-card {
+            background: rgba(124, 92, 255, 0.2);
+            border-left: 4px solid #7c5cff;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .feedback-card h4 {
+            color: #7c5cff;
+            margin-bottom: 10px;
+        }
+
         /* Other */
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
         .mode-card { background: rgba(31,31,51,0.6); border-radius: 20px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
@@ -276,7 +286,23 @@
 
 <!-- Sidebar -->
 <div class="sidebar">
-    <h2><i class="fas fa-robot"></i> AI Smart</h2>
+    <!-- New SVG Logo -->
+    <div class="logo">
+        <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
+            <circle cx="30" cy="25" r="5" fill="white"/>
+            <circle cx="50" cy="25" r="5" fill="white"/>
+            <circle cx="30" cy="25" r="2" fill="#333"/>
+            <circle cx="50" cy="25" r="2" fill="#333"/>
+            <path d="M35 35 Q40 42, 45 35" stroke="white" stroke-width="3" fill="none"/>
+            <line x1="10" y1="20" x2="25" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+            <line x1="10" y1="30" x2="25" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+            <line x1="55" y1="20" x2="70" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+            <line x1="55" y1="30" x2="70" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+            <text x="80" y="35" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
+        </svg>
+    </div>
+
     <button onclick="showSection('dashboard')" id="btn-dashboard"><i class="fas fa-home"></i> Dashboard</button>
     <button onclick="showSection('resume')" id="btn-resume"><i class="fas fa-file-alt"></i> Resume Analyzer</button>
     <button onclick="showSection('interview')" id="btn-interview"><i class="fas fa-comments"></i> Interview</button>
@@ -460,6 +486,10 @@
         let videoStream = null, videoInterval = null, currentVideoQuestion = null, confidenceScore = 50;
         let faceApiAvailable = true;
 
+        // For storing answers and scores of standard interview
+        let userAnswers = [];
+        let answerScores = [];
+
         // ---------- UTILITIES ----------
         function showToast(msg) {
             const toast = document.createElement('div');
@@ -598,6 +628,8 @@
             document.getElementById('examArea').style.display = 'none';
             document.getElementById('videoArea').style.display = 'none';
             document.getElementById('questionArea').style.display = 'block';
+            userAnswers = [];
+            answerScores = [];
             _startInterview();
         };
 
@@ -742,6 +774,7 @@
                 chatContainer.appendChild(userBubble);
             }
 
+            let score = 0;
             try {
                 const res = await fetch(BASE_URL + '/api/interview/evaluate', {
                     method: 'POST',
@@ -749,13 +782,18 @@
                     body: JSON.stringify({ answer, questionObj: q, timeSpent: 30 - timeLeft })
                 });
                 const data = await res.json();
-                totalScore += data.score;
+                score = data.score;
+                totalScore += score;
                 document.getElementById('feedbackBox').innerHTML = `<p>Score: ${data.score}/10</p><p>${data.feedback ? data.feedback.join(' ') : ''}</p>`;
             } catch (e) {
-                let score = answer.length > 20 ? 7 : 4;
+                score = answer.length > 20 ? 7 : 4;
                 totalScore += score;
                 document.getElementById('feedbackBox').innerHTML = `<p>Score: ${score}/10 (offline)</p>`;
             }
+
+            // Store answer and score
+            userAnswers[currentIndex] = answer;
+            answerScores[currentIndex] = score;
 
             document.getElementById('questionArea').innerHTML += `
                 <div class="typing-indicator">
@@ -769,21 +807,11 @@
 
         async function finishInterview() {
             const percent = Math.round((totalScore / (questions.length * 10)) * 100);
-            document.getElementById('questionArea').innerHTML = `
-                <div class="chat-bubble-ai">
-                    <div class="chat-avatar">🤖</div>
-                    <div class="chat-content">
-                        <div class="chat-question">🎉 Interview Completed</div>
-                        <div>Your Score: ${percent}%</div>
-                        <button class="btn" onclick="downloadReport(${percent})" style="margin-top:10px;">Download PDF Report</button>
-                    </div>
-                </div>
-            `;
-
+            // Save interview first
             const answers = questions.map((q, idx) => ({
                 question: q.question,
-                answer: '...',
-                score: 0,
+                answer: userAnswers[idx] || '',
+                score: answerScores[idx] || 0,
                 skill: q.skill || 'general',
                 timeSpent: 30
             }));
@@ -793,29 +821,82 @@
                 headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
                 body: JSON.stringify({ role: currentRole, difficulty: currentDifficulty, totalScore: percent, answers })
             });
+
+            // Fetch AI feedback
+            let feedbackText = "No feedback available.";
+            try {
+                const fbRes = await fetch(BASE_URL + '/api/interview/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
+                    body: JSON.stringify({
+                        questions: questions.map(q => q.question),
+                        answers: userAnswers,
+                        scores: answerScores
+                    })
+                });
+                const fbData = await fbRes.json();
+                feedbackText = fbData.feedback || feedbackText;
+            } catch (e) { console.error('Feedback error', e); }
+
+            document.getElementById('questionArea').innerHTML = `
+                <div class="chat-bubble-ai">
+                    <div class="chat-avatar">🤖</div>
+                    <div class="chat-content">
+                        <div class="chat-question">🎉 Interview Completed</div>
+                        <div>Your Score: ${percent}%</div>
+                        <div class="feedback-card">
+                            <h4>📈 How to Improve</h4>
+                            <p>${feedbackText}</p>
+                        </div>
+                        <button class="btn" onclick="downloadEnhancedReport(${percent}, '${feedbackText.replace(/'/g, "\\'")}')">Download Full Report (PDF)</button>
+                    </div>
+                </div>
+            `;
             updatePractice();
         }
 
-        window.downloadReport = function(score) {
+        // Enhanced PDF with logo and feedback
+        window.downloadEnhancedReport = function(score, feedback) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(18);
-            doc.text('AI Interview Report', 20, 20);
+
+            // Add logo (assumes logo.png is in public folder)
+            const logoUrl = window.location.origin + '/logo.png';
+            doc.addImage(logoUrl, 'PNG', 20, 10, 50, 20); // x, y, width, height
+
+            doc.setFontSize(22);
+            doc.text('Interview Report', 80, 25);
             doc.setFontSize(12);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 30);
-            doc.text(`Role: ${currentRole}`, 20, 40);
-            doc.text(`Difficulty: ${currentDifficulty}`, 20, 50);
-            doc.text(`Overall Score: ${score}%`, 20, 60);
-            doc.text('Questions:', 20, 70);
-            let y = 80;
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+            doc.text(`Candidate: ${localStorage.getItem('userName') || 'N/A'}`, 20, 60);
+            doc.text(`Role: ${currentRole} · Difficulty: ${currentDifficulty}`, 20, 70);
+            doc.text(`Overall Score: ${score}%`, 20, 80);
+
+            doc.setFontSize(14);
+            doc.text('Question Details:', 20, 100);
+            let y = 110;
             questions.forEach((q, i) => {
-                doc.text(`${i+1}. ${q.question.substring(0,50)}...`, 20, y);
+                doc.setFontSize(11);
+                doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
+                y += 7;
+                doc.text(`Answer: ${userAnswers[i] ? userAnswers[i].substring(0,50)+'...' : 'No answer'}`, 20, y);
+                y += 7;
+                doc.text(`Score: ${answerScores[i]}/10`, 20, y);
                 y += 10;
+                if (y > 280) { doc.addPage(); y = 20; }
             });
+
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text('Improvement Feedback', 20, 20);
+            doc.setFontSize(12);
+            const splitFeedback = doc.splitTextToSize(feedback, 170);
+            doc.text(splitFeedback, 20, 35);
+
             doc.save('Interview_Report.pdf');
         };
 
-        // ---------- EXAM MODE (FULL WORKING) ----------
+        // ---------- EXAM MODE (with feedback) ----------
         window.startExam = async function() {
             const role = document.getElementById('role').value;
             const difficulty = document.getElementById('difficulty').value;
@@ -925,7 +1006,6 @@
 
         window.submitExam = async function() {
             saveCurrentAnswer(currentExamIndex);
-            // check all answered
             for (let i=0; i<examQuestions.length; i++) {
                 if (!examAnswers[i]) {
                     showToast(`Please answer question ${i+1}`);
@@ -940,16 +1020,71 @@
                     body:JSON.stringify({ questions: examQuestions, answers: examAnswers })
                 });
                 const result = await res.json();
+                // Get feedback for exam (use same feedback endpoint)
+                let feedbackText = "No feedback available.";
+                try {
+                    const fbRes = await fetch(BASE_URL + '/api/interview/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                        body: JSON.stringify({
+                            questions: examQuestions.map(q => q.question),
+                            answers: examAnswers,
+                            scores: result.results.map(r => r.score)
+                        })
+                    });
+                    const fbData = await fbRes.json();
+                    feedbackText = fbData.feedback || feedbackText;
+                } catch (e) { console.error('Feedback error', e); }
+
                 let html = '<h2>📊 Exam Results</h2>';
                 result.results.forEach((r,i) => {
                     html += `<p>Q${i+1}: Score ${r.score}/10 – ${r.feedback || (r.correct ? 'Correct' : 'Wrong')}</p>`;
                 });
                 html += `<h3>Total: ${result.totalScore}%</h3>`;
+                html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${feedbackText}</p></div>`;
+                html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, '${feedbackText.replace(/'/g, "\\'")}')">Download Report (PDF)</button>`;
                 document.getElementById('examArea').innerHTML = html;
             } catch(e) { showToast('Submission failed'); }
         };
 
-        // ---------- VIDEO INTERVIEW (with face-api fallback) ----------
+        window.downloadExamReport = function(score, feedback) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const logoUrl = window.location.origin + '/logo.png';
+            doc.addImage(logoUrl, 'PNG', 20, 10, 50, 20);
+            doc.setFontSize(22);
+            doc.text('Exam Report', 80, 25);
+            doc.setFontSize(12);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+            doc.text(`Candidate: ${localStorage.getItem('userName') || 'N/A'}`, 20, 60);
+            doc.text(`Role: ${document.getElementById('role').value} · Difficulty: ${document.getElementById('difficulty').value}`, 20, 70);
+            doc.text(`Overall Score: ${score}%`, 20, 80);
+
+            doc.setFontSize(14);
+            doc.text('Question Details:', 20, 100);
+            let y = 110;
+            examQuestions.forEach((q, i) => {
+                doc.setFontSize(11);
+                doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
+                y += 7;
+                doc.text(`Answer: ${examAnswers[i] ? examAnswers[i].substring(0,50)+'...' : 'No answer'}`, 20, y);
+                y += 7;
+                doc.text(`Score: ${result.results[i].score}/10`, 20, y);
+                y += 10;
+                if (y > 280) { doc.addPage(); y = 20; }
+            });
+
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text('Improvement Feedback', 20, 20);
+            doc.setFontSize(12);
+            const splitFeedback = doc.splitTextToSize(feedback, 170);
+            doc.text(splitFeedback, 20, 35);
+
+            doc.save('Exam_Report.pdf');
+        };
+
+        // ---------- VIDEO INTERVIEW (unchanged) ----------
         async function loadFaceApiModels() {
             try {
                 const MODEL_URL = 'https://unpkg.com/face-api.js@0.22.2/weights/';

@@ -206,6 +206,31 @@ router.post('/video/save', authMiddleware, async (req, res) => {
   res.json({ message: 'Video interview saved' });
 });
 
+// ================= GENERATE IMPROVEMENT FEEDBACK =================
+router.post('/feedback', authMiddleware, async (req, res) => {
+  const { questions, answers, scores } = req.body;
+  try {
+    let prompt = "You are an expert interview coach. Based on the following interview answers, provide constructive feedback on areas to improve. Be specific, encouraging, and mention 2-3 key points. Output in JSON format with a 'feedback' string.\n\n";
+    for (let i = 0; i < questions.length; i++) {
+      prompt += `Q${i+1}: ${questions[i]}\nA: ${answers[i]}\nScore: ${scores[i]}/10\n\n`;
+    }
+    prompt += `Feedback as JSON: {"feedback": "your feedback here"}`;
+
+    const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
+    const jsonMatch = raw.match(/\{.*\}/s);
+    if (jsonMatch) {
+      res.json(JSON.parse(jsonMatch[0]));
+    } else {
+      res.json({ feedback: "Keep practicing! Focus on explaining concepts more clearly and adding examples." });
+    }
+  } catch (error) {
+    console.error('Feedback generation error:', error);
+    res.json({ feedback: "Unable to generate feedback at this time." });
+  }
+});
+
 // ================= GET HINT =================
 router.get('/hint', authMiddleware, (req, res) => {
   res.json({ hint: "Think about the core concepts and explain step by step." });

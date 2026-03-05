@@ -19,7 +19,6 @@
             --accent:#7c5cff;
             --accent-glow:rgba(124,92,255,0.3);
         }
-
         body.light{
             --bg:#f5f6fa;
             --text:#111;
@@ -27,14 +26,12 @@
             --card:#ffffff;
             --accent-glow:rgba(124,92,255,0.2);
         }
-
         *{
             margin:0;
             padding:0;
             box-sizing:border-box;
             font-family:'Inter',sans-serif;
         }
-
         body{
             background:var(--bg);
             color:var(--text);
@@ -45,7 +42,6 @@
             display: flex;
             flex-direction: column;
         }
-
         /* Particle Canvas */
         #particles{
             position:fixed;
@@ -56,7 +52,6 @@
             z-index:-1;
             pointer-events: none;
         }
-
         /* 3D floating shapes */
         .shape {
             position: absolute;
@@ -89,7 +84,6 @@
             opacity: 0.1;
             filter: blur(70px);
         }
-
         /* Navbar */
         .navbar{
             position:fixed;
@@ -109,25 +103,15 @@
             border:1px solid rgba(255,255,255,0.08);
             box-shadow:0 20px 40px rgba(0,0,0,0.4);
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-            font-weight: 700;
+        .logo svg {
+            width: 160px;
+            height: auto;
+            display: block;
         }
-        .logo i {
-            color: var(--accent);
-            font-size: 2rem;
-            filter: drop-shadow(0 5px 10px var(--accent));
-        }
-
         .nav-buttons {
             display: flex;
             gap: 15px;
         }
-
         .btn{
             padding:12px 22px;
             border-radius:40px;
@@ -137,7 +121,6 @@
             font-weight:600;
             transition:0.2s;
         }
-
         .btn-primary{
             background:linear-gradient(145deg, #7c5cff, #6240e0);
             color:white;
@@ -149,7 +132,6 @@
             background: linear-gradient(145deg, #8a6eff, #7355f0);
             box-shadow:0 15px 30px -5px var(--accent);
         }
-
         .btn-outline{
             background:transparent;
             border:1px solid var(--accent);
@@ -158,8 +140,7 @@
         .btn-outline:hover {
             background: rgba(124,92,255,0.1);
         }
-
-        /* Main container (glass card) */
+        /* Main container */
         .main-container {
             width: 1300px;
             max-width: 95%;
@@ -179,8 +160,7 @@
             transform: translateY(-8px) scale(1.01);
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
         }
-
-        /* Hero section */
+        /* Hero */
         .hero {
             display: flex;
             flex-wrap: wrap;
@@ -214,8 +194,7 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-
-        /* Feature cards (exactly 4 items) */
+        /* Feature cards */
         .features {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -253,8 +232,7 @@
             color: var(--muted);
             line-height: 1.5;
         }
-
-        /* Pricing section */
+        /* Pricing */
         .pricing {
             display: flex;
             justify-content: space-between;
@@ -290,7 +268,6 @@
             color: var(--muted);
             margin: 10px 0;
         }
-
         /* Footer / Copyright */
         .copyright {
             text-align: center;
@@ -300,7 +277,6 @@
             margin-top: 40px;
             border-top: 1px solid rgba(255,255,255,0.05);
         }
-
         /* Responsive */
         @media (max-width: 1000px) {
             .hero-left h1 { font-size: 3rem; }
@@ -312,6 +288,7 @@
             .hero-left h1 { font-size: 2.5rem; }
             .features { grid-template-columns: 1fr; }
             .navbar { flex-direction: column; gap: 10px; }
+            .logo svg { width: 120px; }
         }
     </style>
 </head>
@@ -324,11 +301,22 @@
     <div class="shape shape2"></div>
     <div class="shape shape3"></div>
 
-    <!-- Navbar -->
+    <!-- Navbar with new logo -->
     <div class="navbar">
         <div class="logo">
-            <i class="fas fa-robot"></i>
-            <span>AI Based Smart Interview</span>
+            <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="20" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
+                <circle cx="30" cy="25" r="5" fill="white"/>
+                <circle cx="50" cy="25" r="5" fill="white"/>
+                <circle cx="30" cy="25" r="2" fill="#333"/>
+                <circle cx="50" cy="25" r="2" fill="#333"/>
+                <path d="M35 35 Q40 42, 45 35" stroke="white" stroke-width="3" fill="none"/>
+                <line x1="10" y1="20" x2="25" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="10" y1="30" x2="25" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="55" y1="20" x2="70" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="55" y1="30" x2="70" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <text x="80" y="35" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
+            </svg>
         </div>
         <div class="nav-buttons">
             <button class="btn btn-outline" onclick="toggleTheme()">Toggle Theme</button>
