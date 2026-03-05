@@ -16,6 +16,7 @@
     <!-- Face API -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
+        /* ... (keep all existing styles, unchanged) ... */
         * {
             margin: 0;
             padding: 0;
@@ -941,7 +942,18 @@
             let videoStream = null, videoInterval = null, currentVideoQuestion = null, confidenceScore = 50;
             let faceApiAvailable = true;
             let userAnswers = [], answerScores = [];
-            let examResult = null; // for exam results
+            let examResult = null;
+
+            // ---------- HTML ESCAPE (prevents broken layout from special chars) ----------
+            function escapeHtml(unsafe) {
+                if (!unsafe) return unsafe;
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
 
             // ---------- UTILITIES ----------
             function showToast(msg, type = 'success') {
@@ -1043,7 +1055,7 @@
                     const res = await fetch(BASE_URL + '/api/challenge/today', { headers: { Authorization: "Bearer " + token } });
                     const challenge = await res.json();
                     document.getElementById('dailyChallengeContent').innerHTML = `
-                        <p><strong>${challenge.question}</strong></p>
+                        <p><strong>${escapeHtml(challenge.question)}</strong></p>
                         ${challenge.type === 'coding' ? '<div id="challengeEditor" class="editor-container"></div>' : '<textarea id="challengeAnswer" rows="4" placeholder="Your answer..."></textarea>'}
                         <button class="btn" onclick="submitDailyChallenge()">Submit Answer</button>
                         <div id="challengeFeedback"></div>
@@ -1136,7 +1148,7 @@
                 if (q.type === 'mcq' && q.options) {
                     inputHtml = '<div>' + q.options.map((opt, idx) => `
                         <label class="mcq-option" style="display:block; margin:8px 0; padding:8px; background:rgba(255,255,255,0.05); border-radius:8px;">
-                            <input type="radio" name="mcq" value="${idx}"> ${opt}
+                            <input type="radio" name="mcq" value="${idx}"> ${escapeHtml(opt)}
                         </label>
                     `).join('') + '</div>';
                 } else if (q.type === 'coding') {
@@ -1149,7 +1161,7 @@
                     <div class="chat-bubble-ai">
                         <div class="chat-avatar">🤖</div>
                         <div class="chat-content">
-                            <div class="chat-question">${q.question}</div>
+                            <div class="chat-question">${escapeHtml(q.question)}</div>
                             <div class="chat-meta">Question ${currentIndex+1}/${questions.length} · ${q.type.toUpperCase()}</div>
                         </div>
                     </div>
@@ -1225,7 +1237,7 @@
                     userBubble.innerHTML = `
                         <div class="chat-avatar">👤</div>
                         <div class="chat-content">
-                            <div>${answer.substring(0,100)}${answer.length > 100 ? '...' : ''}</div>
+                            <div>${escapeHtml(answer.substring(0,100))}${answer.length > 100 ? '...' : ''}</div>
                         </div>
                     `;
                     chatContainer.appendChild(userBubble);
@@ -1241,7 +1253,7 @@
                     const data = await res.json();
                     score = data.score;
                     totalScore += score;
-                    document.getElementById('feedbackBox').innerHTML = `<p>Score: ${data.score}/10</p><p>${data.feedback ? data.feedback.join(' ') : ''}</p>`;
+                    document.getElementById('feedbackBox').innerHTML = `<p>Score: ${data.score}/10</p><p>${data.feedback ? data.feedback.map(escapeHtml).join(' ') : ''}</p>`;
                 } catch (e) {
                     score = answer.length > 20 ? 7 : 4;
                     totalScore += score;
@@ -1262,7 +1274,6 @@
             };
 
             async function finishInterview() {
-                // Cancel any ongoing speech
                 window.speechSynthesis.cancel();
 
                 const percent = Math.round((totalScore / (questions.length * 10)) * 100);
@@ -1303,7 +1314,7 @@
                             <div>Your Score: ${percent}%</div>
                             <div class="feedback-card">
                                 <h4>📈 How to Improve</h4>
-                                <p>${feedbackText}</p>
+                                <p>${escapeHtml(feedbackText)}</p>
                             </div>
                             <button class="btn" onclick="downloadEnhancedReport(${percent}, ${JSON.stringify(feedbackText)})">Download Full Report (PDF)</button>
                         </div>
@@ -1421,21 +1432,21 @@
                         const letter = String.fromCharCode(65 + i);
                         optionsHtml += `
                             <div class="exam-option ${examAnswers[index] === letter ? 'selected' : ''}" onclick="selectMCQ(${index}, '${letter}')">
-                                <input type="radio" name="q${index}" value="${letter}" ${examAnswers[index] === letter ? 'checked' : ''}> ${opt}
+                                <input type="radio" name="q${index}" value="${letter}" ${examAnswers[index] === letter ? 'checked' : ''}> ${escapeHtml(opt)}
                             </div>
                         `;
                     });
                     container.innerHTML = `
                         <div class="exam-question">
-                            <p><strong>Q${index+1}:</strong> ${q.question}</p>
+                            <p><strong>Q${index+1}:</strong> ${escapeHtml(q.question)}</p>
                             <div class="exam-options">${optionsHtml}</div>
                         </div>
                     `;
                 } else {
                     container.innerHTML = `
                         <div class="exam-question">
-                            <p><strong>Q${index+1}:</strong> ${q.question}</p>
-                            <textarea class="exam-textarea" id="theoryAnswer${index}" placeholder="Your answer...">${examAnswers[index] || ''}</textarea>
+                            <p><strong>Q${index+1}:</strong> ${escapeHtml(q.question)}</p>
+                            <textarea class="exam-textarea" id="theoryAnswer${index}" placeholder="Your answer...">${escapeHtml(examAnswers[index] || '')}</textarea>
                         </div>
                     `;
                 }
@@ -1516,15 +1527,15 @@
                     html += `
                         <div class="result-card ${scoreClass}">
                             <div class="result-header">
-                                <span class="result-question">Q${i+1}: ${q.question.substring(0,60)}${q.question.length>60?'...':''}</span>
+                                <span class="result-question">Q${i+1}: ${escapeHtml(q.question.substring(0,60))}${q.question.length>60?'...':''}</span>
                                 <span class="result-score">${r.score}/10</span>
                             </div>
-                            <div class="result-feedback">${r.feedback || (r.correct ? '✅ Correct' : '❌ Wrong')}</div>
+                            <div class="result-feedback">${escapeHtml(r.feedback || (r.correct ? '✅ Correct' : '❌ Wrong'))}</div>
                         </div>
                     `;
                 });
                 html += `<h3 style="margin-top:20px;">Total: ${result.totalScore}%</h3>`;
-                html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${feedback}</p></div>`;
+                html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${escapeHtml(feedback)}</p></div>`;
                 html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, ${JSON.stringify(feedback)}, ${JSON.stringify(result.results)})">Download Report (PDF)</button>`;
                 document.getElementById('examArea').innerHTML = html;
                 showToast('🎉 Exam submitted! Check your results.', 'success');
@@ -1645,7 +1656,7 @@
                     const data = await res.json();
                     currentVideoQuestion = data.questions[0];
                     document.getElementById('videoQuestionArea').innerHTML = `
-                        <div class="chat-bubble-ai"><div class="chat-avatar">🤖</div><div class="chat-content">${currentVideoQuestion.question}</div></div>
+                        <div class="chat-bubble-ai"><div class="chat-avatar">🤖</div><div class="chat-content">${escapeHtml(currentVideoQuestion.question)}</div></div>
                         <textarea id="videoAnswer" rows="4" style="width:100%; margin-top:20px;"></textarea>
                         <button class="btn" onclick="submitVideoAnswer()">Submit</button>
                     `;
@@ -1698,13 +1709,13 @@
                         <div class="score-ring" style="background:conic-gradient(#7c5cff ${score*3.6}deg, #333 0deg);"><span>${score}%</span></div>
                         <div class="stars">${starHtml}</div>
                         <div class="rating-label ${labelClass}">${label}</div>
-                        <p>Skills: ${skills.join(', ')}</p>
+                        <p>Skills: ${skills.map(s => escapeHtml(s)).join(', ')}</p>
                     `;
                     document.getElementById('resumeResult').style.display = 'block';
                     let jobsHtml = '<h3>Recommended Jobs</h3>';
                     skills.slice(0,5).forEach(skill => {
                         jobsHtml += `
-                            <div class="job-card"><div><h4>${skill} Developer</h4><p>Remote</p></div>
+                            <div class="job-card"><div><h4>${escapeHtml(skill)} Developer</h4><p>Remote</p></div>
                             <a href="${getJobLink(skill)}" target="_blank" class="apply-btn">Apply</a></div>
                         `;
                     });
@@ -1721,7 +1732,7 @@
                     if(!data.length) { document.getElementById('historyBox').innerHTML = '<p>No history yet.</p>'; return; }
                     document.getElementById('historyBox').innerHTML = data.map(d => `
                         <div style="background:#2a2a44; padding:10px; border-radius:8px; margin-bottom:8px;">
-                            <strong>${d.role}</strong> - Score: ${d.totalScore}%<br><small>${new Date(d.date).toLocaleDateString()}</small>
+                            <strong>${escapeHtml(d.role)}</strong> - Score: ${d.totalScore}%<br><small>${new Date(d.date).toLocaleDateString()}</small>
                         </div>
                     `).join('');
                 } catch(e) { showToast('Failed to load history', 'error'); }
@@ -1757,7 +1768,7 @@
                     const res = await fetch(BASE_URL+'/api/user/leaderboard');
                     const users = await res.json();
                     document.getElementById('leaderboardList').innerHTML = users.map((u,i)=>`
-                        <div class="leaderboard-item"><span>${i+1}. ${u.name}</span><span>Level ${u.level} · ${u.xp} XP</span></div>
+                        <div class="leaderboard-item"><span>${i+1}. ${escapeHtml(u.name)}</span><span>Level ${u.level} · ${u.xp} XP</span></div>
                     `).join('');
                 } catch(e) { document.getElementById('leaderboardList').innerHTML = '<p>Failed to load.</p>'; }
             }
