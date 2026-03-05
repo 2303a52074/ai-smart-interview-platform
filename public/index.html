@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Based Smart Interview · Master Interviews</title>
+    <title>AI Smart · Master Interviews</title>
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Google Fonts: Inter -->
@@ -11,216 +11,233 @@
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root{
-            --bg:#0f0f18;
-            --text:#ffffff;
-            --muted:#b0b0c3;
-            --card:rgba(255,255,255,0.05);
-            --accent:#7c5cff;
-            --accent-glow:rgba(124,92,255,0.3);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
-        body.light{
-            --bg:#f5f6fa;
-            --text:#111;
-            --muted:#555;
-            --card:#ffffff;
-            --accent-glow:rgba(124,92,255,0.2);
-        }
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:'Inter',sans-serif;
-        }
-        body{
-            background:var(--bg);
-            color:var(--text);
-            transition:0.4s ease;
-            overflow-x:hidden;
-            position: relative;
+
+        body {
             min-height: 100vh;
+            color: white;
+            background: radial-gradient(circle at 20% 30%, #1a1a2f, #0c0b1a);
+            position: relative;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
         }
-        /* Particle Canvas */
-        #particles{
-            position:fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            z-index:-1;
+
+        /* 3D floating particles */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
             pointer-events: none;
         }
-        /* 3D floating shapes */
-        .shape {
+
+        /* Glowing orbs */
+        .orb {
             position: absolute;
             border-radius: 50%;
-            background: var(--accent);
-            filter: blur(60px);
-            z-index: -1;
-            opacity: 0.15;
+            filter: blur(80px);
+            z-index: 0;
         }
-        .shape1 {
-            width: 400px;
-            height: 400px;
-            top: -100px;
-            left: -100px;
-        }
-        .shape2 {
+        .orb1 {
             width: 500px;
             height: 500px;
-            bottom: -150px;
-            right: -50px;
-            background: #ff6b9d;
-            opacity: 0.1;
+            background: #7c5cff;
+            opacity: 0.2;
+            top: -200px;
+            left: -100px;
         }
-        .shape3 {
-            width: 300px;
-            height: 300px;
-            top: 40%;
-            right: 15%;
+        .orb2 {
+            width: 600px;
+            height: 600px;
+            background: #ff6b9d;
+            opacity: 0.15;
+            bottom: -250px;
+            right: -150px;
+        }
+        .orb3 {
+            width: 400px;
+            height: 400px;
             background: #4ecdc4;
             opacity: 0.1;
-            filter: blur(70px);
+            top: 40%;
+            left: 60%;
         }
+
         /* Navbar */
-        .navbar{
-            position:fixed;
-            top:20px;
-            left:50%;
-            transform:translateX(-50%);
-            width:90%;
-            max-width:1200px;
-            padding:15px 30px;
-            background:var(--card);
-            backdrop-filter:blur(20px);
-            border-radius:20px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            z-index:1000;
-            border:1px solid rgba(255,255,255,0.08);
-            box-shadow:0 20px 40px rgba(0,0,0,0.4);
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1300px;
+            padding: 15px 35px;
+            background: rgba(20, 20, 35, 0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 60px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,92,255,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            transform-style: preserve-3d;
+            transition: transform 0.3s;
         }
+        .navbar:hover {
+            transform: translateX(-50%) translateY(-5px) rotateX(2deg);
+            box-shadow: 0 30px 50px rgba(124,92,255,0.3);
+        }
+
         .logo svg {
-            width: 160px;
+            width: 170px;
             height: auto;
-            display: block;
+            filter: drop-shadow(0 5px 10px rgba(124,92,255,0.5));
         }
+
         .nav-buttons {
             display: flex;
             gap: 15px;
         }
-        .btn{
-            padding:12px 22px;
-            border-radius:40px;
-            border:none;
-            cursor:pointer;
-            font-size:14px;
-            font-weight:600;
-            transition:0.2s;
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transform: translateZ(10px);
         }
-        .btn-primary{
-            background:linear-gradient(145deg, #7c5cff, #6240e0);
-            color:white;
-            box-shadow:0 10px 20px -5px var(--accent);
-            border:1px solid rgba(255,255,255,0.15);
+        .btn-primary {
+            background: linear-gradient(145deg, #7c5cff, #9b7aff);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         .btn-primary:hover {
-            transform: scale(1.05);
-            background: linear-gradient(145deg, #8a6eff, #7355f0);
-            box-shadow:0 15px 30px -5px var(--accent);
+            background: linear-gradient(145deg, #8a6eff, #a88cff);
+            transform: scale(1.05) translateZ(15px);
+            box-shadow: 0 15px 30px #7c5cff;
         }
-        .btn-outline{
-            background:transparent;
-            border:1px solid var(--accent);
-            color:var(--accent);
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            backdrop-filter: blur(5px);
         }
         .btn-outline:hover {
-            background: rgba(124,92,255,0.1);
+            background: rgba(124,92,255,0.2);
+            border-color: #7c5cff;
+            transform: scale(1.05) translateZ(15px);
         }
+
         /* Main container */
         .main-container {
             width: 1300px;
             max-width: 95%;
-            margin: 120px auto 60px;
-            background: rgba(20, 20, 35, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 48px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 140px auto 60px;
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 70px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,92,255,0.2);
             padding: 70px 60px;
             position: relative;
-            z-index: 2;
-            transition: transform 0.4s ease;
+            z-index: 10;
+            transform: translateZ(30px) rotateX(1deg);
+            transition: transform 0.4s;
         }
         .main-container:hover {
-            transform: translateY(-8px) scale(1.01);
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+            transform: translateZ(50px) rotateX(0deg);
+            box-shadow: 0 60px 120px rgba(124,92,255,0.3);
         }
-        /* Hero */
+
         .hero {
             display: flex;
             flex-wrap: wrap;
             gap: 50px;
             margin-bottom: 80px;
+            align-items: center;
         }
         .hero-left {
             flex: 1 1 500px;
         }
         .hero-left h1 {
-            font-size: 4rem;
+            font-size: 4.2rem;
             font-weight: 800;
             line-height: 1.2;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            text-shadow: 0 10px 30px rgba(124,92,255,0.4);
         }
         .highlight {
-            background: linear-gradient(135deg, #ffffff 0%, #d9d0ff 80%);
+            background: linear-gradient(135deg, #fff, #d9d0ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 30px var(--accent-glow);
         }
         .hero-left p {
             font-size: 1.2rem;
-            line-height: 1.7;
-            color: var(--muted);
-            margin-bottom: 35px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 30px;
             max-width: 550px;
         }
-        .cta-buttons {
+
+        .hero-right {
+            flex: 1;
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+            justify-content: center;
+            perspective: 1000px;
         }
-        /* Feature cards */
+        .hero-right i {
+            font-size: 250px;
+            color: #7c5cff;
+            opacity: 0.5;
+            transform: rotateY(15deg) rotateX(5deg);
+            filter: drop-shadow(0 20px 30px #7c5cff);
+            transition: 0.3s;
+        }
+        .hero-right i:hover {
+            transform: rotateY(0deg) rotateX(0deg) scale(1.05);
+            opacity: 0.7;
+        }
+
         .features {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 25px;
-            margin-top: 40px;
+            margin-top: 50px;
         }
         .feature-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 30px;
-            padding: 30px 20px;
+            padding: 35px 20px;
             text-align: center;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
-            box-shadow: 0 15px 30px -15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            transform: translateZ(15px) rotateY(1deg);
+            transition: 0.3s;
         }
         .feature-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            background: rgba(124, 92, 255, 0.1);
-            border-color: rgba(124, 92, 255, 0.3);
+            transform: translateZ(30px) rotateY(0deg) scale(1.05);
+            background: rgba(124,92,255,0.15);
+            border-color: #7c5cff;
+            box-shadow: 0 30px 60px rgba(124,92,255,0.4);
         }
         .feature-icon {
-            font-size: 2.8rem;
-            color: var(--accent);
+            font-size: 3rem;
+            color: #7c5cff;
             margin-bottom: 20px;
-            filter: drop-shadow(0 5px 15px var(--accent));
+            filter: drop-shadow(0 5px 15px #7c5cff);
         }
         .feature-title {
             font-weight: 700;
@@ -228,94 +245,90 @@
             margin-bottom: 10px;
         }
         .feature-desc {
+            color: rgba(255,255,255,0.6);
             font-size: 0.95rem;
-            color: var(--muted);
-            line-height: 1.5;
         }
-        /* Pricing */
+
         .pricing {
             display: flex;
-            justify-content: space-between;
-            gap: 25px;
+            gap: 30px;
             margin-top: 80px;
         }
         .price-card {
             flex: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 40px;
             padding: 40px 30px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 30px;
             text-align: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            transform: translateZ(10px);
             transition: 0.3s;
         }
         .price-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent);
-            background: rgba(124, 92, 255, 0.05);
+            transform: translateZ(25px) translateY(-10px);
+            background: rgba(124,92,255,0.1);
+            border-color: #7c5cff;
+            box-shadow: 0 40px 80px rgba(124,92,255,0.3);
         }
         .price-card h2 {
             font-size: 2rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .price {
-            font-size: 2.5rem;
-            margin: 20px 0;
-            color: var(--accent);
+            font-size: 3rem;
             font-weight: 700;
+            color: #7c5cff;
+            margin: 20px 0;
         }
         .price-card p {
-            color: var(--muted);
+            color: rgba(255,255,255,0.6);
             margin: 10px 0;
         }
-        /* Footer / Copyright */
+
         .copyright {
             text-align: center;
             padding: 20px;
-            color: var(--muted);
+            color: rgba(255,255,255,0.4);
             font-size: 0.9rem;
-            margin-top: 40px;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 60px;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
-        /* Responsive */
+
         @media (max-width: 1000px) {
             .hero-left h1 { font-size: 3rem; }
             .features { grid-template-columns: repeat(2, 1fr); }
             .pricing { flex-direction: column; }
         }
         @media (max-width: 600px) {
-            .main-container { padding: 40px 25px; }
-            .hero-left h1 { font-size: 2.5rem; }
             .features { grid-template-columns: 1fr; }
-            .navbar { flex-direction: column; gap: 10px; }
-            .logo svg { width: 120px; }
+            .navbar { flex-direction: column; gap: 15px; }
+            .hero-right i { font-size: 150px; }
         }
     </style>
 </head>
 <body>
-    <!-- Particle canvas -->
     <canvas id="particles"></canvas>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
 
-    <!-- 3D floating shapes -->
-    <div class="shape shape1"></div>
-    <div class="shape shape2"></div>
-    <div class="shape shape3"></div>
-
-    <!-- Navbar with new logo -->
     <div class="navbar">
         <div class="logo">
-            <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="20" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
-                <circle cx="30" cy="25" r="5" fill="white"/>
-                <circle cx="50" cy="25" r="5" fill="white"/>
-                <circle cx="30" cy="25" r="2" fill="#333"/>
-                <circle cx="50" cy="25" r="2" fill="#333"/>
-                <path d="M35 35 Q40 42, 45 35" stroke="white" stroke-width="3" fill="none"/>
-                <line x1="10" y1="20" x2="25" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="10" y1="30" x2="25" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="55" y1="20" x2="70" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="55" y1="30" x2="70" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <text x="80" y="35" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
+            <!-- Final corrected SVG logo: AI Smart -->
+            <svg width="170" height="55" viewBox="0 0 190 65" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="15" y="12" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
+                <circle cx="25" cy="27" r="5" fill="white"/>
+                <circle cx="45" cy="27" r="5" fill="white"/>
+                <circle cx="25" cy="27" r="2" fill="#333"/>
+                <circle cx="45" cy="27" r="2" fill="#333"/>
+                <path d="M30 37 Q35 44, 40 37" stroke="white" stroke-width="3" fill="none"/>
+                <line x1="5" y1="22" x2="20" y2="22" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="5" y1="32" x2="20" y2="32" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="50" y1="22" x2="65" y2="22" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="50" y1="32" x2="65" y2="32" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <text x="78" y="40" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="26" font-weight="700" fill="currentColor">AI Smart</text>
             </svg>
         </div>
         <div class="nav-buttons">
@@ -324,36 +337,21 @@
         </div>
     </div>
 
-    <!-- Main glass container -->
     <div class="main-container">
-        <!-- Hero section -->
         <div class="hero">
             <div class="hero-left">
-                <h1>
-                    Master Interviews With<br>
-                    <span class="highlight">AI Intelligence</span>
-                </h1>
-                <p>
-                    Upload your resume. Practice adaptive mock interviews.
-                    Receive structured feedback and track measurable improvement —
-                    all powered by a smart evaluation engine.
-                </p>
+                <h1>Master Interviews With<br><span class="highlight">AI Intelligence</span></h1>
+                <p>Upload your resume. Practice adaptive mock interviews. Receive structured feedback and track measurable improvement — all powered by a smart evaluation engine.</p>
                 <div class="cta-buttons">
-                    <button class="btn btn-primary" onclick="window.location.href='register.html'">
-                        Start Free Practice <i class="fas fa-arrow-right"></i>
-                    </button>
-                    <button class="btn btn-outline">
-                        <i class="fas fa-play"></i> Watch Demo
-                    </button>
+                    <button class="btn btn-primary" onclick="window.location.href='register.html'">Start Free Practice <i class="fas fa-arrow-right"></i></button>
+                    <button class="btn btn-outline"><i class="fas fa-play"></i> Watch Demo</button>
                 </div>
             </div>
-            <!-- Optional illustration -->
-            <div style="flex:1; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-chart-pie" style="font-size: 200px; color: var(--accent); opacity: 0.5;"></i>
+            <div class="hero-right">
+                <i class="fas fa-robot"></i>
             </div>
         </div>
 
-        <!-- Feature cards -->
         <div class="features">
             <div class="feature-card">
                 <div class="feature-icon"><i class="fas fa-bolt"></i></div>
@@ -377,7 +375,6 @@
             </div>
         </div>
 
-        <!-- Pricing section -->
         <div class="pricing">
             <div class="price-card">
                 <h2>Free</h2>
@@ -403,50 +400,43 @@
         </div>
     </div>
 
-    <!-- Copyright footer -->
     <div class="copyright">
-        © 2025 AI Based Smart Interview. All rights reserved.
+        © 2025 AI Smart. All rights reserved.
     </div>
 
     <script>
-        // GSAP animations
-        gsap.from(".hero-left", {opacity:0, y:80, duration:1.2});
-        gsap.from(".features", {opacity:0, y:60, duration:1.2, delay:0.3});
-        gsap.from(".pricing", {opacity:0, y:60, duration:1.2, delay:0.6});
-
-        // Theme toggle
-        function toggleTheme(){
-            document.body.classList.toggle("light");
+        function toggleTheme() {
+            document.body.classList.toggle('light');
         }
 
-        // Particle Background
-        const canvas = document.getElementById("particles");
-        const ctx = canvas.getContext("2d");
+        // Particle background
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         let particles = [];
-        for(let i = 0; i < 80; i++){
+        for(let i=0; i<100; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                r: Math.random() * 2 + 1,
-                dx: (Math.random() - 0.5) * 0.5,
-                dy: (Math.random() - 0.5) * 0.5
+                r: Math.random() * 3 + 1,
+                dx: (Math.random() - 0.5) * 0.8,
+                dy: (Math.random() - 0.5) * 0.8
             });
         }
 
-        function animate(){
+        function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(124,92,255,0.5)";
+            ctx.fillStyle = 'rgba(124,92,255,0.5)';
             particles.forEach(p => {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
                 ctx.fill();
                 p.x += p.dx;
                 p.y += p.dy;
-                if(p.x < 0 || p.x > canvas.width) p.dx *= -1;
-                if(p.y < 0 || p.y > canvas.height) p.dy *= -1;
+                if(p.x<0 || p.x>canvas.width) p.dx *= -1;
+                if(p.y<0 || p.y>canvas.height) p.dy *= -1;
             });
             requestAnimationFrame(animate);
         }
@@ -456,6 +446,10 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
+
+        gsap.from('.hero-left', {opacity:0, y:80, duration:1.2});
+        gsap.from('.features', {opacity:0, y:60, duration:1.2, delay:0.3});
+        gsap.from('.pricing', {opacity:0, y:60, duration:1.2, delay:0.6});
     </script>
 </body>
 </html>

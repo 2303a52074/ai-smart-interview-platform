@@ -3,89 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login · AI Based Smart Interview</title>
-    <!-- Font Awesome 6 (free) -->
+    <title>AI Smart · Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <!-- GSAP for subtle animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: linear-gradient(145deg, #0c0b1a 0%, #1a1a2f 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            background: radial-gradient(circle at 30% 50%, #1a1a2f, #0c0b1a);
             position: relative;
-            overflow-x: hidden;
+            overflow: hidden;
+            padding: 20px;
         }
 
-        /* 3D floating shapes */
-        .shape {
+        /* 3D floating orbs */
+        .orb {
             position: absolute;
             border-radius: 50%;
-            background: rgba(124, 92, 255, 0.15);
-            filter: blur(60px);
+            filter: blur(100px);
             z-index: 0;
         }
-        .shape1 {
-            width: 400px;
-            height: 400px;
-            top: -100px;
-            left: -100px;
+        .orb1 {
+            width: 600px;
+            height: 600px;
             background: #7c5cff;
-            opacity: 0.3;
-        }
-        .shape2 {
-            width: 500px;
-            height: 500px;
-            bottom: -150px;
-            right: -50px;
-            background: #ff6b9d;
             opacity: 0.2;
+            top: -200px;
+            left: -200px;
         }
-        .shape3 {
-            width: 300px;
-            height: 300px;
-            top: 40%;
-            right: 15%;
-            background: #4ecdc4;
+        .orb2 {
+            width: 700px;
+            height: 700px;
+            background: #ff6b9d;
             opacity: 0.15;
-            filter: blur(70px);
+            bottom: -300px;
+            right: -250px;
         }
 
-        /* Main glass card */
         .login-card {
             width: 460px;
             max-width: 100%;
             background: rgba(20, 20, 35, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 48px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 50px 40px;
+            backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,92,255,0.2);
+            padding: 60px 50px;
             position: relative;
             z-index: 10;
-            transition: transform 0.4s ease;
-            color: white;
+            transform: translateZ(40px) rotateY(2deg);
+            transition: transform 0.4s;
         }
-
         .login-card:hover {
-            transform: translateY(-8px) scale(1.01);
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+            transform: translateZ(60px) rotateY(0deg) scale(1.02);
+            box-shadow: 0 60px 120px rgba(124,92,255,0.4);
         }
 
-        /* Logo */
         .logo {
             display: flex;
             justify-content: center;
@@ -93,54 +76,50 @@
         }
         .logo svg {
             width: 160px;
-            height: auto;
+            filter: drop-shadow(0 10px 20px #7c5cff);
         }
 
         h2 {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             text-align: center;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #ffffff 0%, #d9d0ff 80%);
+            background: linear-gradient(135deg, #fff, #d9d0ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
             text-align: center;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255,255,255,0.6);
             margin-bottom: 40px;
-            font-size: 1rem;
         }
 
-        /* Input fields */
         .input-group {
             margin-bottom: 25px;
         }
         .input-group label {
             display: block;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
+            color: rgba(255,255,255,0.8);
             margin-bottom: 8px;
-            font-size: 0.95rem;
+            font-weight: 500;
         }
         .input-wrapper {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
             padding: 4px 20px;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-        .input-wrapper:hover,
-        .input-wrapper:focus-within {
+        .input-wrapper:hover, .input-wrapper:focus-within {
             border-color: #7c5cff;
-            background: rgba(124, 92, 255, 0.1);
-            box-shadow: 0 0 20px rgba(124, 92, 255, 0.3);
+            background: rgba(124,92,255,0.1);
+            box-shadow: 0 0 30px rgba(124,92,255,0.3);
         }
         .input-wrapper i {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255,255,255,0.5);
             font-size: 1.2rem;
             margin-right: 12px;
         }
@@ -154,11 +133,9 @@
             outline: none;
         }
         .input-wrapper input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-            font-weight: 400;
+            color: rgba(255,255,255,0.3);
         }
 
-        /* Options (forgot password) */
         .options {
             display: flex;
             justify-content: flex-end;
@@ -168,18 +145,11 @@
             color: #7c5cff;
             text-decoration: none;
             font-size: 0.95rem;
-            font-weight: 500;
-            transition: 0.2s;
-        }
-        .options a:hover {
-            text-decoration: underline;
-            color: #a185ff;
         }
 
-        /* Login button */
         .login-btn {
             width: 100%;
-            background: linear-gradient(145deg, #7c5cff, #6240e0);
+            background: linear-gradient(145deg, #7c5cff, #9b7aff);
             border: none;
             border-radius: 60px;
             padding: 18px;
@@ -187,101 +157,82 @@
             font-weight: 600;
             color: white;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 25px;
+            transition: 0.3s;
             box-shadow: 0 15px 30px -10px #7c5cff;
-            border: 1px solid rgba(255,255,255,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
         .login-btn:hover {
-            background: linear-gradient(145deg, #8a6eff, #7355f0);
+            background: linear-gradient(145deg, #8a6eff, #a88cff);
             transform: scale(1.02);
-            box-shadow: 0 20px 35px -8px #7c5cff;
+            box-shadow: 0 20px 40px #7c5cff;
         }
 
-        /* Register link */
         .register-text {
             text-align: center;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 25px;
         }
         .register-text a {
             color: #7c5cff;
             font-weight: 600;
             text-decoration: none;
-            transition: 0.2s;
-        }
-        .register-text a:hover {
-            text-decoration: underline;
-            color: #a185ff;
         }
 
-        /* Error box */
         .error {
             margin-top: 15px;
             color: #ff6b6b;
             text-align: center;
-            font-size: 0.95rem;
-            background: rgba(255, 107, 107, 0.1);
+            background: rgba(255,107,107,0.1);
             padding: 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 30px;
+            border: 1px solid rgba(255,107,107,0.3);
             display: none;
         }
-        .error.show {
-            display: block;
-        }
+        .error.show { display: block; }
 
-        /* Copyright footer */
         .copyright {
             position: fixed;
             bottom: 15px;
             left: 0;
             width: 100%;
             text-align: center;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255,255,255,0.3);
             font-size: 0.8rem;
             z-index: 1000;
-            pointer-events: none;
         }
 
         @media (max-width: 500px) {
             .login-card { padding: 40px 25px; }
-            h2 { font-size: 1.8rem; }
-            .logo svg { width: 120px; }
+            h2 { font-size: 2rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Background 3D shapes -->
-    <div class="shape shape1"></div>
-    <div class="shape shape2"></div>
-    <div class="shape shape3"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
 
-    <!-- Login Card -->
     <div class="login-card" id="loginCard">
         <div class="logo">
             <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="20" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
-                <circle cx="30" cy="25" r="5" fill="white"/>
-                <circle cx="50" cy="25" r="5" fill="white"/>
-                <circle cx="30" cy="25" r="2" fill="#333"/>
-                <circle cx="50" cy="25" r="2" fill="#333"/>
-                <path d="M35 35 Q40 42, 45 35" stroke="white" stroke-width="3" fill="none"/>
-                <line x1="10" y1="20" x2="25" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="10" y1="30" x2="25" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="55" y1="20" x2="70" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <line x1="55" y1="30" x2="70" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
-                <text x="80" y="35" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
+                <rect x="15" y="10" width="40" height="40" rx="12" fill="#7c5cff" stroke="currentColor" stroke-width="2"/>
+                <circle cx="25" cy="25" r="5" fill="white"/>
+                <circle cx="45" cy="25" r="5" fill="white"/>
+                <circle cx="25" cy="25" r="2" fill="#333"/>
+                <circle cx="45" cy="25" r="2" fill="#333"/>
+                <path d="M30 35 Q35 42, 40 35" stroke="white" stroke-width="3" fill="none"/>
+                <line x1="5" y1="20" x2="20" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="5" y1="30" x2="20" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="50" y1="20" x2="65" y2="20" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <line x1="50" y1="30" x2="65" y2="30" stroke="#7c5cff" stroke-width="2" stroke-dasharray="4 2"/>
+                <text x="75" y="38" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="28" font-weight="700" fill="currentColor">AI Smart</text>
             </svg>
         </div>
         <h2>Welcome Back</h2>
         <div class="subtitle">Log in to continue your interview journey</div>
 
-        <!-- Email -->
         <div class="input-group">
             <label>Email</label>
             <div class="input-wrapper">
@@ -290,7 +241,6 @@
             </div>
         </div>
 
-        <!-- Password -->
         <div class="input-group">
             <label>Password</label>
             <div class="input-wrapper">
@@ -299,41 +249,30 @@
             </div>
         </div>
 
-        <!-- Forgot password link -->
         <div class="options">
             <a href="#">Forgot password?</a>
         </div>
 
-        <!-- Login button -->
         <button class="login-btn" onclick="login()">
             <span>Log In</span>
             <i class="fas fa-arrow-right"></i>
         </button>
 
-        <!-- Error message container -->
         <div class="error" id="errorBox"></div>
 
-        <!-- Register link -->
         <div class="register-text">
             Don't have an account? <a href="register.html">Register</a>
         </div>
     </div>
 
-    <!-- Copyright footer -->
     <div class="copyright">
-        © 2025 AI Based Smart Interview. All rights reserved.
+        © 2025 AI Smart. All rights reserved.
     </div>
 
     <script>
         const BASE_URL = window.location.origin;
 
-        // GSAP entrance animation
-        gsap.from("#loginCard", {
-            duration: 1,
-            y: 40,
-            opacity: 0,
-            ease: "power3.out"
-        });
+        gsap.from("#loginCard", { duration: 1, y: 40, opacity: 0, ease: "power3.out" });
 
         async function login() {
             const errorBox = document.getElementById("errorBox");
@@ -355,12 +294,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-
                 const data = await res.json();
 
                 if (res.ok) {
                     localStorage.setItem("token", data.token);
-                    // Optionally store user name
                     if (data.user) localStorage.setItem("userName", data.user.name);
                     window.location.href = "dashboard.html";
                 } else {
@@ -368,7 +305,7 @@
                     errorBox.classList.add("show");
                 }
             } catch (err) {
-                errorBox.innerText = "Server not responding. Please try again.";
+                errorBox.innerText = "Server not responding.";
                 errorBox.classList.add("show");
             }
         }
