@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Monaco Editor -->
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
+    <!-- Face API -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -19,7 +21,6 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* Animated background */
         body {
             display: flex;
             min-height: 100vh;
@@ -49,7 +50,7 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* ========== 3D SIDEBAR ========== */
+        /* Sidebar 3D */
         .sidebar {
             width: 250px;
             background: rgba(20, 20, 35, 0.9);
@@ -99,7 +100,7 @@
             box-shadow: 0 10px 20px rgba(124,92,255,0.5);
         }
 
-        /* Main content */
+        /* Main */
         .main {
             flex: 1;
             padding: 40px;
@@ -107,7 +108,7 @@
             transform-style: preserve-3d;
         }
 
-        /* Cards with 3D effect */
+        /* Cards */
         .card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(8px);
@@ -124,7 +125,7 @@
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
         }
 
-        /* 3D summary rings */
+        /* Summary rings */
         .summary {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -163,11 +164,8 @@
             margin-bottom: 10px;
             transition: 0.3s;
         }
-        .summary > div:hover .ring {
-            box-shadow: 0 15px 30px rgba(124,92,255,0.5);
-        }
 
-        /* Floating AI Coach Widget */
+        /* Floating AI Coach */
         .ai-coach-float {
             position: fixed;
             bottom: 30px;
@@ -218,7 +216,7 @@
             50% { transform: translateY(5px); }
         }
 
-        /* Resume job cards - 3D style */
+        /* Resume job cards */
         .job-card {
             background: rgba(31, 31, 51, 0.8);
             backdrop-filter: blur(5px);
@@ -408,7 +406,7 @@
         .average { color: #ffc107; }
         .poor { color: #f44336; }
 
-        /* ========== NEW CHAT‑LIKE INTERVIEW UI ========== */
+        /* Chat UI */
         .chat-container {
             display: flex;
             flex-direction: column;
@@ -502,6 +500,122 @@
             flex-wrap: wrap;
             margin-top: 15px;
         }
+
+        /* Exam & Video specific */
+        .exam-question {
+            background: rgba(31, 31, 51, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .exam-question p {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .exam-question label {
+            display: block;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .exam-question input[type="radio"] {
+            margin-right: 10px;
+        }
+        #videoContainer {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 20px auto;
+        }
+        #video, #canvas {
+            width: 100%;
+            border-radius: 20px;
+            border: 2px solid #7c5cff;
+        }
+        #canvas {
+            display: none;
+        }
+        .confidence-meter {
+            background: rgba(31, 31, 51, 0.8);
+            padding: 15px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .confidence-bar {
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4d4d, #7c5cff);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* ===== NEW STYLES FOR IMPROVED INTERVIEW SECTION ===== */
+        .mode-selector {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0 10px;
+            justify-content: center;
+        }
+        .mode-card {
+            flex: 1 1 180px;
+            background: rgba(31, 31, 51, 0.6);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transform: translateZ(5px);
+        }
+        .mode-card:hover {
+            transform: translateZ(15px) scale(1.05);
+            background: rgba(124,92,255,0.2);
+            border-color: #7c5cff;
+            box-shadow: 0 15px 30px rgba(124,92,255,0.4);
+        }
+        .mode-card i {
+            font-size: 2.5rem;
+            color: #7c5cff;
+            margin-bottom: 10px;
+        }
+        .mode-card h4 {
+            margin-bottom: 5px;
+            font-size: 1.2rem;
+        }
+        .mode-card p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .selector-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        .selector-row select {
+            flex: 1 1 200px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(31, 31, 51, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -592,11 +706,13 @@
         <div id="jobSuggestions" style="margin-top: 20px;"></div>
     </div>
 
-    <!-- INTERVIEW (Enhanced chat UI) -->
+    <!-- INTERVIEW SECTION (REDESIGNED UI) -->
     <div id="interviewSection" class="card" style="display:none">
-        <h2><i class="fas fa-comments"></i> AI Interview</h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
-            <select id="role" style="flex: 1;">
+        <h2 style="text-align:center; margin-bottom:20px;"><i class="fas fa-comments"></i> AI Interview</h2>
+        
+        <!-- Row 1: Role and difficulty selectors -->
+        <div class="selector-row">
+            <select id="role">
                 <option value="frontend">Frontend</option>
                 <option value="backend">Backend</option>
                 <option value="react">React</option>
@@ -606,18 +722,42 @@
                 <option value="dsa">DSA</option>
                 <option value="general">General</option>
             </select>
-            <select id="difficulty" style="flex: 1;">
+            <select id="difficulty">
                 <option value="easy">Easy</option>
                 <option value="medium" selected>Medium</option>
                 <option value="hard">Hard</option>
             </select>
-            <button class="btn" onclick="startInterview()">Start Interview</button>
         </div>
-        <div id="timer" style="font-size:20px; margin-bottom:10px;"></div>
+
+        <!-- Row 2: Mode cards (buttons) -->
+        <div class="mode-selector">
+            <div class="mode-card" onclick="startInterview()">
+                <i class="fas fa-comment-dots"></i>
+                <h4>Standard</h4>
+                <p>5 AI‑generated questions</p>
+            </div>
+            <div class="mode-card" onclick="startExam()">
+                <i class="fas fa-pencil-alt"></i>
+                <h4>Exam Mode</h4>
+                <p>7 MCQ + 2 Theory</p>
+            </div>
+            <div class="mode-card" onclick="startVideoInterview()">
+                <i class="fas fa-video"></i>
+                <h4>Video Interview</h4>
+                <p>AI asks, you answer on camera</p>
+            </div>
+        </div>
+
+        <!-- Timer and progress -->
+        <div id="timer" style="font-size:20px; text-align:center; margin:10px 0;"></div>
         <div class="progressBar">
             <div class="progressInner" id="progressInner"></div>
         </div>
-        <div id="questionArea" class="chat-container"></div>
+
+        <!-- Dynamic areas for each mode -->
+        <div id="questionArea" class="chat-container" style="display: none;"></div>
+        <div id="examArea" style="display: none;"></div>
+        <div id="videoArea" style="display: none;"></div>
     </div>
 
     <!-- HISTORY -->
@@ -682,7 +822,7 @@
 <script>
     (function() {
         // ---------- CONFIG ----------
-        const BASE_URL = "https://ai-smart-interview-platform-1.onrender.com"; // change if needed
+        const BASE_URL = window.location.origin; // auto-detect
         const token = localStorage.getItem("token");
         if (!token) { location.href = "login.html"; }
 
@@ -690,7 +830,11 @@
         let questions = [], currentIndex = 0, totalScore = 0, timeLeft = 30, timerInterval;
         let currentRole = '', currentDifficulty = '';
         let monacoEditor = null;
-        let showingTyping = false;
+        let examQuestions = [];
+        let videoStream = null;
+        let videoInterval = null;
+        let currentVideoQuestion = null;
+        let confidenceScore = 50;
 
         // ---------- UTILITIES ----------
         function showToast(msg) {
@@ -729,7 +873,7 @@
             if (id === 'profile') loadProfile();
         };
 
-        // ---------- DASHBOARD (unchanged) ----------
+        // ---------- DASHBOARD ----------
         async function loadDashboard() {
             try {
                 updatePractice();
@@ -785,7 +929,7 @@
             document.getElementById('streak').innerText = streak;
         }
 
-        // ---------- DAILY CHALLENGE (unchanged) ----------
+        // ---------- DAILY CHALLENGE ----------
         async function loadDailyChallenge() {
             try {
                 const res = await fetch(BASE_URL + '/api/challenge/today', {
@@ -837,24 +981,31 @@
             }
         };
 
-        // ---------- INTERVIEW (Enhanced chat UI) ----------
-        window.startInterview = async function() {
+        // ---------- STANDARD INTERVIEW ----------
+        window.startInterview = function() {
+            // Hide other mode containers, show question area
+            document.getElementById('examArea').style.display = 'none';
+            document.getElementById('videoArea').style.display = 'none';
+            document.getElementById('questionArea').style.display = 'block';
+            // Reset timer display
+            document.getElementById('timer').innerText = '';
+            // Start the interview logic (same as before)
+            _startInterviewInternal();
+        };
+
+        // We'll rename the original startInterview to _startInterviewInternal and keep its logic
+        async function _startInterviewInternal() {
             try {
                 currentRole = document.getElementById('role').value;
                 currentDifficulty = document.getElementById('difficulty').value;
-                // Show typing indicator while loading
-                document.getElementById('questionArea').innerHTML = `
-                    <div class="typing-indicator">
-                        <span></span><span></span><span></span>
-                    </div>
-                `;
+                document.getElementById('questionArea').innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
                 const res = await fetch(BASE_URL + '/api/interview/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: "Bearer " + token
                     },
-                    body: JSON.stringify({ role: currentRole, type: 'technical', difficulty: currentDifficulty })
+                    body: JSON.stringify({ role: currentRole, difficulty: currentDifficulty })
                 });
                 const data = await res.json();
                 questions = data.questions;
@@ -864,7 +1015,7 @@
             } catch (e) {
                 showToast('Failed to start interview');
             }
-        };
+        }
 
         function showQuestion() {
             if (currentIndex >= questions.length) {
@@ -887,7 +1038,6 @@
             if (!q.type) q.type = 'text';
             speak(q.question);
 
-            // Build answer input based on type
             let inputHtml = '';
             if (q.type === 'mcq' && q.options) {
                 inputHtml = '<div>' + q.options.map((opt, idx) => `
@@ -901,7 +1051,6 @@
                 inputHtml = `<textarea id="ans" rows="4" placeholder="Type your answer here..."></textarea>`;
             }
 
-            // Build chat message
             document.getElementById('questionArea').innerHTML = `
                 <div class="chat-bubble-ai">
                     <div class="chat-avatar">🤖</div>
@@ -924,7 +1073,6 @@
                 </div>
             `;
 
-            // Initialize Monaco for coding questions
             if (q.type === 'coding') {
                 require(['vs/editor/editor.main'], function() {
                     monacoEditor = monaco.editor.create(document.getElementById('codingEditor'), {
@@ -979,7 +1127,6 @@
                 }
             }
 
-            // Show user answer bubble
             if (!isTimeout && answer) {
                 const chatContainer = document.getElementById('questionArea');
                 const userBubble = document.createElement('div');
@@ -1011,7 +1158,6 @@
                 document.getElementById('feedbackBox').innerHTML = `<p>Score: ${score}/10 (offline)</p>`;
             }
 
-            // Show typing indicator before next question
             document.getElementById('questionArea').innerHTML += `
                 <div class="typing-indicator">
                     <span></span><span></span><span></span>
@@ -1078,7 +1224,214 @@
             doc.save('Interview_Report.pdf');
         };
 
-        // ---------- RESUME ANALYZER (unchanged) ----------
+        // ---------- EXAM MODE ----------
+        window.startExam = async function() {
+            const role = document.getElementById('role').value;
+            const difficulty = document.getElementById('difficulty').value;
+            document.getElementById('examArea').style.display = 'block';
+            document.getElementById('questionArea').style.display = 'none';
+            document.getElementById('videoArea').style.display = 'none';
+            document.getElementById('timer').innerText = ''; // clear timer
+            document.getElementById('examArea').innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const res = await fetch(BASE_URL + '/api/interview/exam', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ role, difficulty })
+                });
+                const data = await res.json();
+                examQuestions = data.questions;
+                displayExam(examQuestions);
+            } catch (e) {
+                showToast('Failed to load exam');
+            }
+        };
+
+        function displayExam(questions) {
+            let html = '<h2>📝 Exam Mode</h2><form id="examForm">';
+            questions.forEach((q, idx) => {
+                if (q.type === 'mcq') {
+                    html += `
+                        <div class="exam-question">
+                            <p><strong>Q${idx+1}:</strong> ${q.question}</p>
+                            ${q.options.map(opt => `
+                                <label>
+                                    <input type="radio" name="q${idx}" value="${opt[0]}"> ${opt}
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="exam-question">
+                            <p><strong>Q${idx+1}:</strong> ${q.question}</p>
+                            <textarea name="q${idx}" rows="4" placeholder="Your answer..." style="width:100%; background:#2a2a44; color:white; border:none; border-radius:8px; padding:10px;"></textarea>
+                        </div>
+                    `;
+                }
+            });
+            html += '<button type="button" class="btn" onclick="submitExam()">Submit Exam</button></form>';
+            document.getElementById('examArea').innerHTML = html;
+        }
+
+        window.submitExam = async function() {
+            const form = document.getElementById('examForm');
+            const answers = [];
+            for (let i = 0; i < examQuestions.length; i++) {
+                const q = examQuestions[i];
+                if (q.type === 'mcq') {
+                    const radios = form.querySelectorAll(`input[name="q${i}"]:checked`);
+                    answers.push(radios.length ? radios[0].value : '');
+                } else {
+                    const textarea = form.querySelector(`textarea[name="q${i}"]`);
+                    answers.push(textarea ? textarea.value : '');
+                }
+            }
+            try {
+                const res = await fetch(BASE_URL + '/api/interview/exam/evaluate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ questions: examQuestions, answers })
+                });
+                const result = await res.json();
+                let resultHtml = '<h2>📊 Exam Results</h2>';
+                result.results.forEach((r, i) => {
+                    resultHtml += `<p>Q${i+1}: Score ${r.score}/10 – ${r.feedback || (r.correct ? 'Correct' : 'Wrong')}</p>`;
+                });
+                resultHtml += `<h3>Total Score: ${result.totalScore}%</h3>`;
+                document.getElementById('examArea').innerHTML = resultHtml;
+            } catch (e) {
+                showToast('Submission failed');
+            }
+        };
+
+        // ---------- VIDEO INTERVIEW MODE ----------
+        window.startVideoInterview = async function() {
+            const role = document.getElementById('role').value;
+            const difficulty = document.getElementById('difficulty').value;
+            document.getElementById('videoArea').style.display = 'block';
+            document.getElementById('questionArea').style.display = 'none';
+            document.getElementById('examArea').style.display = 'none';
+            document.getElementById('timer').innerText = ''; // clear timer
+            document.getElementById('videoArea').innerHTML = `
+                <h2>🎥 Video Interview</h2>
+                <div id="videoContainer">
+                    <video id="video" autoplay muted></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <div class="confidence-meter">
+                    <p>Confidence: <span id="confidenceValue">50%</span></p>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill" style="width:50%"></div>
+                    </div>
+                </div>
+                <div id="videoQuestionArea"></div>
+                <button class="btn" onclick="stopVideoInterview()">Stop Interview</button>
+            `;
+            await loadFaceApiModels();
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('video');
+                video.srcObject = videoStream;
+                video.play();
+                startConfidenceDetection();
+                fetchVideoQuestion(role, difficulty);
+            } catch (err) {
+                showToast('Camera access denied');
+            }
+        };
+
+        async function loadFaceApiModels() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights/';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+        }
+
+        function startConfidenceDetection() {
+            const video = document.getElementById('video');
+            videoInterval = setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+                if (detections.length > 0) {
+                    const expressions = detections[0].expressions;
+                    confidenceScore = Math.min(100, Math.round((expressions.happy + expressions.neutral + expressions.surprised) * 100));
+                    document.getElementById('confidenceValue').innerText = confidenceScore + '%';
+                    document.getElementById('confidenceFill').style.width = confidenceScore + '%';
+                }
+            }, 1000);
+        }
+
+        async function fetchVideoQuestion(role, difficulty) {
+            try {
+                const res = await fetch(BASE_URL + '/api/interview/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ role, difficulty })
+                });
+                const data = await res.json();
+                currentVideoQuestion = data.questions[0];
+                document.getElementById('videoQuestionArea').innerHTML = `
+                    <div class="chat-bubble-ai">
+                        <div class="chat-avatar">🤖</div>
+                        <div class="chat-content">
+                            <div class="chat-question">${currentVideoQuestion.question}</div>
+                        </div>
+                    </div>
+                    <textarea id="videoAnswer" rows="4" placeholder="Your answer..." style="width:100%; margin-top:20px;"></textarea>
+                    <button class="btn" onclick="submitVideoAnswer()">Submit Answer</button>
+                `;
+            } catch (e) {
+                showToast('Failed to load question');
+            }
+        }
+
+        window.submitVideoAnswer = async function() {
+            const answer = document.getElementById('videoAnswer').value;
+            if (!answer) {
+                showToast('Please answer the question');
+                return;
+            }
+            try {
+                await fetch(BASE_URL + '/api/interview/video/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        role: document.getElementById('role').value,
+                        difficulty: document.getElementById('difficulty').value,
+                        question: currentVideoQuestion.question,
+                        answer,
+                        confidenceScore,
+                        timeSpent: 30
+                    })
+                });
+                showToast('Answer saved with confidence ' + confidenceScore + '%');
+                fetchVideoQuestion(document.getElementById('role').value, document.getElementById('difficulty').value);
+            } catch (e) {
+                showToast('Submission failed');
+            }
+        };
+
+        window.stopVideoInterview = function() {
+            if (videoInterval) clearInterval(videoInterval);
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('videoArea').innerHTML = '<p>Interview ended. Thank you!</p>';
+        };
+
+        // ---------- RESUME ANALYZER ----------
         window.handleFileSelect = function() {
             const file = document.getElementById('resumeFile').files[0];
             document.getElementById('fileName').innerText = file ? file.name : 'No file chosen';
