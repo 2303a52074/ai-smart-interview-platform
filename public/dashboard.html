@@ -523,30 +523,55 @@
             margin: 20px 0;
         }
 
-        /* Toast notifications (bottom center) */
+        /* Toast notifications – beautiful pop‑ups */
         .toast {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%) translateY(100%);
-            background: rgba(20, 20, 35, 0.9);
+            background: rgba(20, 20, 35, 0.95);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(124,92,255,0.3);
+            border: 1px solid;
             color: white;
-            padding: 15px 30px;
+            padding: 16px 32px;
             border-radius: 60px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 500;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             z-index: 9999;
-            animation: slideUp 0.3s forwards;
+            animation: slideUp 0.4s forwards;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            min-width: 300px;
+            justify-content: center;
+        }
+        .toast.success {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.2);
+            box-shadow: 0 0 20px #4caf50;
+        }
+        .toast.error {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+            box-shadow: 0 0 20px #f44336;
+        }
+        .toast.info {
+            border-color: #7c5cff;
+            background: rgba(124, 92, 255, 0.2);
+            box-shadow: 0 0 20px #7c5cff;
         }
         .toast i {
+            font-size: 1.5rem;
+        }
+        .toast.success i {
+            color: #4caf50;
+        }
+        .toast.error i {
+            color: #f44336;
+        }
+        .toast.info i {
             color: #7c5cff;
-            font-size: 1.3rem;
         }
         @keyframes slideUp {
             from { transform: translateX(-50%) translateY(100%); opacity: 0; }
@@ -931,15 +956,18 @@
             let examResult = null; // for exam results
 
             // ---------- UTILITIES ----------
-            function showToast(msg, icon = 'fa-check-circle') {
+            function showToast(msg, type = 'success') {
                 const toast = document.createElement('div');
-                toast.className = 'toast';
+                toast.className = `toast ${type}`;
+                let icon = 'fa-check-circle';
+                if (type === 'error') icon = 'fa-exclamation-circle';
+                else if (type === 'info') icon = 'fa-info-circle';
                 toast.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
                 document.body.appendChild(toast);
                 setTimeout(() => {
                     toast.style.animation = 'slideUp 0.3s reverse';
                     setTimeout(() => toast.remove(), 300);
-                }, 3000);
+                }, 3500);
             }
             function showLoading(containerId, show) {
                 const el = document.getElementById(containerId);
@@ -1004,7 +1032,7 @@
 
                     document.getElementById('aiInsight').innerText = scores.length ? "Keep practicing! You're improving." : "Start your first interview.";
                     loadDailyChallenge();
-                } catch (e) { showToast('Failed to load dashboard', 'fa-exclamation-circle'); }
+                } catch (e) { showToast('Failed to load dashboard', 'error'); }
             }
 
             function updatePractice() {
@@ -1062,8 +1090,9 @@
                     });
                     const data = await res.json();
                     document.getElementById('challengeFeedback').innerHTML = `<p>Score: ${data.score} · XP earned: ${data.xpEarned}</p>`;
+                    showToast('Challenge submitted!', 'success');
                     loadDashboard();
-                } catch (e) { showToast('Submission failed', 'fa-exclamation-circle'); }
+                } catch (e) { showToast('Submission failed', 'error'); }
             };
 
             // ---------- STANDARD INTERVIEW ----------
@@ -1091,7 +1120,7 @@
                     currentIndex = 0;
                     totalScore = 0;
                     showQuestion();
-                } catch(e) { showToast('Failed to start interview', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Failed to start interview', 'error'); }
             }
 
             function showQuestion() {
@@ -1292,6 +1321,7 @@
                         </div>
                     </div>
                 `;
+                showToast('🎉 Congratulations! Interview completed!', 'success');
                 updatePractice();
             }
 
@@ -1323,28 +1353,28 @@
                     doc.text('Question Details:', 20, 100);
                     let y = 110;
                     questions.forEach((q, i) => {
+                        if (y > 270) { doc.addPage(); y = 20; }
                         doc.setFontSize(11);
                         doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
                         y += 7;
-                        doc.text(`Answer: ${userAnswers[i] ? userAnswers[i].substring(0,50)+'...' : 'No answer'}`, 20, y);
+                        doc.text(`Answer: ${(userAnswers[i] || 'No answer').substring(0,50)}...`, 20, y);
                         y += 7;
-                        doc.text(`Score: ${answerScores[i]}/10`, 20, y);
+                        doc.text(`Score: ${answerScores[i] || 0}/10`, 20, y);
                         y += 10;
-                        if (y > 280) { doc.addPage(); y = 20; }
                     });
 
                     doc.addPage();
                     doc.setFontSize(16);
                     doc.text('Improvement Feedback', 20, 20);
                     doc.setFontSize(12);
-                    const splitFeedback = doc.splitTextToSize(feedback, 170);
+                    const splitFeedback = doc.splitTextToSize(feedback || 'No feedback available.', 170);
                     doc.text(splitFeedback, 20, 35);
 
                     doc.save('Interview_Report.pdf');
-                    showToast('Report downloaded!', 'fa-download');
+                    showToast('Report downloaded!', 'success');
                 } catch (e) {
                     console.error('PDF generation error:', e);
-                    showToast('Failed to generate PDF', 'fa-exclamation-circle');
+                    showToast('Failed to generate PDF', 'error');
                 }
             };
 
@@ -1368,7 +1398,7 @@
                     examAnswers = [];
                     currentExamIndex = 0;
                     displayExam();
-                } catch(e) { showToast('Failed to load exam', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Failed to load exam', 'error'); }
             };
 
             function displayExam() {
@@ -1459,7 +1489,7 @@
                 saveCurrentAnswer(currentExamIndex);
                 for (let i=0; i<examQuestions.length; i++) {
                     if (!examAnswers[i]) {
-                        showToast(`Please answer question ${i+1}`, 'fa-exclamation-circle');
+                        showToast(`Please answer question ${i+1}`, 'error');
                         currentExamIndex = i;
                         renderExamQuestion(i);
                         return;
@@ -1487,7 +1517,7 @@
                     } catch (e) { console.error('Feedback error', e); }
 
                     displayExamResults(examResult, feedbackText);
-                } catch(e) { showToast('Submission failed', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Submission failed', 'error'); }
             };
 
             function displayExamResults(result, feedback) {
@@ -1509,6 +1539,7 @@
                 html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${feedback}</p></div>`;
                 html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, '${feedback.replace(/'/g, "\\'")}', ${JSON.stringify(result.results)})">Download Report (PDF)</button>`;
                 document.getElementById('examArea').innerHTML = html;
+                showToast('🎉 Exam submitted! Check your results.', 'success');
             }
 
             window.downloadExamReport = function(totalScore, feedback, resultsArray) {
@@ -1536,14 +1567,14 @@
                     doc.text('Question Details:', 20, 100);
                     let y = 110;
                     examQuestions.forEach((q, i) => {
+                        if (y > 270) { doc.addPage(); y = 20; }
                         doc.setFontSize(11);
                         doc.text(`Q${i+1}: ${q.question.substring(0,50)}...`, 20, y);
                         y += 7;
-                        doc.text(`Answer: ${examAnswers[i] ? examAnswers[i].substring(0,50)+'...' : 'No answer'}`, 20, y);
+                        doc.text(`Answer: ${(examAnswers[i] || 'No answer').substring(0,50)}...`, 20, y);
                         y += 7;
                         doc.text(`Score: ${resultsArray[i].score}/10`, 20, y);
                         y += 10;
-                        if (y > 280) { doc.addPage(); y = 20; }
                     });
 
                     doc.addPage();
@@ -1554,10 +1585,10 @@
                     doc.text(splitFeedback, 20, 35);
 
                     doc.save('Exam_Report.pdf');
-                    showToast('Report downloaded!', 'fa-download');
+                    showToast('Report downloaded!', 'success');
                 } catch (e) {
                     console.error('PDF error', e);
-                    showToast('Failed to generate PDF', 'fa-exclamation-circle');
+                    showToast('Failed to generate PDF', 'error');
                 }
             };
 
@@ -1615,7 +1646,7 @@
                     document.getElementById('video').srcObject = videoStream;
                     startConfidenceDetection();
                     fetchVideoQuestion(role, difficulty);
-                } catch(err) { showToast('Camera access denied', 'fa-exclamation-circle'); }
+                } catch(err) { showToast('Camera access denied', 'error'); }
             };
             async function fetchVideoQuestion(role, difficulty) {
                 try {
@@ -1630,24 +1661,25 @@
                         <textarea id="videoAnswer" rows="4" style="width:100%; margin-top:20px;"></textarea>
                         <button class="btn" onclick="submitVideoAnswer()">Submit</button>
                     `;
-                } catch(e) { showToast('Failed to load question', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Failed to load question', 'error'); }
             }
             window.submitVideoAnswer = async function() {
                 const answer = document.getElementById('videoAnswer').value;
-                if (!answer) { showToast('Please answer', 'fa-exclamation-circle'); return; }
+                if (!answer) { showToast('Please answer', 'error'); return; }
                 try {
                     await fetch(BASE_URL + '/api/interview/video/save', {
                         method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
                         body:JSON.stringify({ role:document.getElementById('role').value, difficulty:document.getElementById('difficulty').value, question:currentVideoQuestion.question, answer, confidenceScore, timeSpent:30 })
                     });
-                    showToast('Answer saved, confidence ' + confidenceScore + '%', 'fa-check-circle');
+                    showToast('Answer saved, confidence ' + confidenceScore + '%', 'success');
                     fetchVideoQuestion(document.getElementById('role').value, document.getElementById('difficulty').value);
-                } catch(e) { showToast('Submission failed', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Submission failed', 'error'); }
             };
             window.stopVideoInterview = function() {
                 if (videoInterval) clearInterval(videoInterval);
                 if (videoStream) videoStream.getTracks().forEach(t => t.stop());
                 document.getElementById('videoArea').innerHTML = '<p>Interview ended.</p>';
+                showToast('Video interview ended', 'info');
             };
 
             // ---------- RESUME ANALYZER ----------
@@ -1658,7 +1690,7 @@
             function getJobLink(skill) { return `https://www.indeed.com/jobs?q=${encodeURIComponent(skill+' developer')}`; }
             window.uploadResume = async function() {
                 const file = document.getElementById('resumeFile').files[0];
-                if (!file) return showToast('Select a file', 'fa-exclamation-circle');
+                if (!file) return showToast('Select a file', 'error');
                 const fd = new FormData(); fd.append('resume', file);
                 showLoading('resumeLoading', true);
                 try {
@@ -1689,7 +1721,8 @@
                         `;
                     });
                     document.getElementById('jobSuggestions').innerHTML = jobsHtml;
-                } catch(e) { showToast('Analysis failed', 'fa-exclamation-circle'); } finally { showLoading('resumeLoading',false); }
+                    showToast('Resume analyzed!', 'success');
+                } catch(e) { showToast('Analysis failed', 'error'); } finally { showLoading('resumeLoading',false); }
             };
 
             // ---------- HISTORY ----------
@@ -1703,7 +1736,7 @@
                             <strong>${d.role}</strong> - Score: ${d.totalScore}%<br><small>${new Date(d.date).toLocaleDateString()}</small>
                         </div>
                     `).join('');
-                } catch(e) { showToast('Failed to load history', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Failed to load history', 'error'); }
             };
 
             // ---------- ANALYTICS ----------
@@ -1727,7 +1760,7 @@
                     const labels = Object.keys(skillData), values = Object.values(skillData);
                     new Chart(document.getElementById('skillChart'), { type:'bar', data:{ labels, datasets:[{ label:'Skill Score', data:values, backgroundColor:'#7c5cff' }] } });
                     document.getElementById('skillGap').innerHTML = `<p>Weakest: ${labels.reduce((a,b)=>skillData[a]<skillData[b]?a:b,labels[0])}</p>`;
-                } catch(e) { showToast('Analytics error', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Analytics error', 'error'); }
             };
 
             // ---------- LEADERBOARD ----------
@@ -1750,7 +1783,7 @@
                     document.getElementById('email').value = user.email || '';
                     document.getElementById('themeSelect').value = user.theme || 'dark';
                     document.getElementById('publicProfile').checked = user.publicProfile || false;
-                } catch(e) { showToast('Could not load profile', 'fa-exclamation-circle'); }
+                } catch(e) { showToast('Could not load profile', 'error'); }
             }
             window.updateProfile = async function() {
                 const name = document.getElementById('name').value, email = document.getElementById('email').value,
@@ -1760,9 +1793,9 @@
                         method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
                         body:JSON.stringify({ name, email, theme, publicProfile })
                     });
-                    if(res.ok) { showToast('Profile updated', 'fa-check-circle'); if(theme==='light') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('theme', theme); }
-                    else showToast('Update failed', 'fa-exclamation-circle');
-                } catch(e) { showToast('Update failed', 'fa-exclamation-circle'); }
+                    if(res.ok) { showToast('Profile updated', 'success'); if(theme==='light') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('theme', theme); }
+                    else showToast('Update failed', 'error');
+                } catch(e) { showToast('Update failed', 'error'); }
             };
             window.exportData = function() { window.location.href = BASE_URL + '/api/user/export?token=' + token; };
 
