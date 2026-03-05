@@ -14,7 +14,48 @@ const router = express.Router();
 
 // ----------------------------- FALLBACK ANSWER EVALUATION -----------------------------
 function evaluateAnswerFallback(answer, keywords = [], minLength = 20) {
-  // ... (keep your existing function, not shown for brevity)
+  if (!answer || answer.trim().length === 0) {
+    return { score: 0, feedback: ['No answer provided.'] };
+  }
+
+  const answerTokens = tokenizer.tokenize(answer.toLowerCase());
+  const stemmedAnswer = answerTokens.map(t => PorterStemmer.stem(t));
+  const stemmedKeywords = keywords.map(k => PorterStemmer.stem(k.toLowerCase()));
+
+  let matchedCount = 0;
+  stemmedKeywords.forEach(sk => {
+    if (stemmedAnswer.includes(sk)) matchedCount++;
+  });
+
+  const keywordScore = (matchedCount / Math.max(keywords.length, 1)) * 10;
+  const lengthBonus = answer.length > minLength ? 1 : 0;
+  const sentences = answer.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const structureBonus = sentences.length >= 3 ? 1 : 0;
+
+  let totalScore = Math.min(10, Math.round(keywordScore + lengthBonus + structureBonus));
+
+  let feedback = [];
+  if (keywords.length === 0) {
+    feedback.push(answer.length > 50 ? 'Good detail.' : 'Try to elaborate more.');
+  } else {
+    if (matchedCount === 0) {
+      feedback.push('Your answer missed key technical terms.');
+    } else if (matchedCount < keywords.length / 2) {
+      feedback.push('Good start but missed some important points.');
+    } else {
+      feedback.push('You covered most key concepts.');
+    }
+  }
+
+  if (answer.length < minLength) {
+    feedback.push('Your answer is short. Try explaining more.');
+  }
+
+  if (sentences.length < 2) {
+    feedback.push('Structure your answer using clear sentences.');
+  }
+
+  return { score: totalScore, feedback };
 }
 
 // ================= STANDARD INTERVIEW (AI ONLY) =================

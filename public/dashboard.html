@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Monaco Editor -->
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/editor/editor.main.min.css">
-    <!-- Face API (will fallback if models fail) -->
+    <!-- Face API (with fallback) -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * {
@@ -29,20 +29,22 @@
             background-size: 400% 400%;
             animation: gradientMove 15s ease infinite;
             transition: background 0.3s, color 0.3s;
-            perspective: 1000px;
         }
         body.light-mode {
             background: #f5f5f9;
             color: #222;
         }
-        body.light-mode .card {
-            background: white;
+        body.light-mode .card,
+        body.light-mode .sidebar {
+            background: rgba(255,255,255,0.8);
             color: #222;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-color: rgba(0,0,0,0.1);
         }
         body.light-mode .sidebar button {
-            background: rgba(240, 240, 250, 0.7);
             color: #222;
+        }
+        body.light-mode .sidebar button:hover {
+            background: rgba(124,92,255,0.2);
         }
         @keyframes gradientMove {
             0% { background-position: 0% 50%; }
@@ -50,62 +52,77 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Sidebar 3D */
+        /* ===== SIDEBAR (enhanced) ===== */
         .sidebar {
-            width: 250px;
+            width: 260px;
             background: rgba(20, 20, 35, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 30px 20px;
+            backdrop-filter: blur(12px);
+            padding: 30px 15px;
             height: 100vh;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255,255,255,0.1);
-            border-right: 1px solid rgba(255,255,255,0.08);
-            transform: rotateY(2deg) translateZ(20px);
-            transition: transform 0.3s ease, box-shadow 0.3s;
-            position: relative;
-            z-index: 100;
-        }
-        .sidebar:hover {
-            transform: rotateY(0deg) translateZ(30px);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255,255,255,0.2);
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: 0.3s;
         }
         .sidebar h2 {
             color: #9d7bff;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             display: flex;
             align-items: center;
             gap: 10px;
-            text-shadow: 0 5px 15px rgba(124,92,255,0.5);
+            font-size: 1.6rem;
+            padding-left: 10px;
+            text-shadow: 0 2px 5px rgba(124,92,255,0.3);
+        }
+        .sidebar h2 i {
+            font-size: 2rem;
         }
         .sidebar button {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            background: rgba(31, 31, 51, 0.7);
-            border: 1px solid rgba(255,255,255,0.05);
-            color: #bbb;
-            border-radius: 12px;
+            padding: 14px 20px;
+            margin-bottom: 8px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            border-radius: 14px;
             cursor: pointer;
             text-align: left;
             font-size: 16px;
+            font-weight: 500;
             transition: 0.2s;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-            transform: translateZ(5px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .sidebar button i { margin-right: 10px; width: 20px; }
+        .sidebar button i {
+            width: 24px;
+            font-size: 1.3rem;
+            color: #7c5cff;
+        }
         .sidebar button:hover {
-            background: #7c5cff;
+            background: rgba(124,92,255,0.15);
             color: white;
-            transform: translateZ(15px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(124,92,255,0.5);
+            transform: translateX(5px);
+        }
+        .sidebar button.active {
+            background: rgba(124,92,255,0.25);
+            color: white;
+            border-left: 4px solid #7c5cff;
+        }
+        .sidebar hr {
+            margin: 20px 0 10px;
+            border-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-footer {
+            margin-top: auto;
         }
 
-        /* Main */
+        /* Main content */
         .main {
             flex: 1;
             padding: 40px;
             overflow-y: auto;
-            transform-style: preserve-3d;
         }
 
         /* Cards */
@@ -113,16 +130,10 @@
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(8px);
             padding: 25px;
-            border-radius: 20px;
+            border-radius: 24px;
             margin-bottom: 25px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.05);
-            transform: translateZ(10px) rotateX(1deg);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .card:hover {
-            transform: translateZ(20px) rotateX(0deg);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         /* Summary rings */
@@ -136,19 +147,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             background: rgba(255,255,255,0.03);
             border-radius: 20px;
             padding: 20px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.05);
-            transform: translateZ(15px) rotateY(1deg);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            transition: 0.3s;
-        }
-        .summary > div:hover {
-            transform: translateZ(25px) rotateY(0deg);
-            box-shadow: 0 25px 50px rgba(124,92,255,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .ring {
             width: 120px;
@@ -159,480 +161,134 @@
             justify-content: center;
             font-size: 22px;
             font-weight: bold;
-            background: conic-gradient(#7c5cff 0deg, #222 0deg);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.2);
+            background: conic-gradient(#7c5cff 0deg, #333 0deg);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             margin-bottom: 10px;
-            transition: 0.3s;
         }
 
-        /* Floating AI Coach */
-        .ai-coach-float {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(20, 20, 35, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(124,92,255,0.3);
-            border-radius: 60px;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            z-index: 1000;
-            cursor: pointer;
-            transition: 0.3s;
-            transform: translateZ(50px);
-            animation: float 3s infinite ease-in-out;
-        }
-        .ai-coach-float:hover {
-            transform: translateZ(70px) scale(1.05);
-            box-shadow: 0 30px 60px rgba(124,92,255,0.5);
-        }
-        .ai-coach-float .emoji {
-            font-size: 2.5rem;
-            filter: drop-shadow(0 5px 10px #7c5cff);
-        }
-        .ai-coach-float .text {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        .ai-coach-float .scroll-indicator {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: rgba(124,92,255,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: bounce 2s infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) translateZ(50px); }
-            50% { transform: translateY(-10px) translateZ(50px); }
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(5px); }
-        }
-
-        /* Resume job cards */
-        .job-card {
-            background: rgba(31, 31, 51, 0.8);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-            transform: translateZ(10px);
-            transition: 0.3s;
-        }
-        .job-card:hover {
-            transform: translateZ(20px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(124,92,255,0.3);
-            border-color: rgba(124,92,255,0.3);
-        }
-        .job-info h4 {
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-        .job-info p {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.95rem;
-        }
-        .apply-btn {
-            background: linear-gradient(145deg, #7c5cff, #6240e0);
-            border: none;
-            border-radius: 40px;
-            padding: 10px 20px;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 10px 20px rgba(124,92,255,0.3);
-            transition: 0.2s;
-        }
-        .apply-btn:hover {
-            background: linear-gradient(145deg, #8a6eff, #7355f0);
-            transform: scale(1.05);
-            box-shadow: 0 15px 30px rgba(124,92,255,0.5);
-        }
-
-        /* Other styles */
+        /* Buttons */
         .btn {
             background: #7c5cff;
             border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 30px;
             color: white;
             cursor: pointer;
-            margin-top: 10px;
-            margin-right: 8px;
+            font-weight: 600;
             transition: 0.2s;
             box-shadow: 0 5px 15px rgba(124,92,255,0.3);
         }
         .btn:hover { background: #5f3dc4; transform: translateY(-2px); }
-        .btn-hint { background: #ffaa33; }
-        .btn-hint:hover { background: #e69900; }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 8px;
-            border: none;
-            background: #2a2a44;
-            color: white;
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
         }
+
+        /* Progress bar */
         .progressBar {
             height: 8px;
             background: #333;
-            border-radius: 10px;
-            margin-top: 10px;
+            border-radius: 4px;
             overflow: hidden;
+            margin: 15px 0;
         }
         .progressInner {
             height: 100%;
             background: #ff4d4d;
             width: 0%;
         }
-        .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #7c5cff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            margin-bottom: 15px;
-        }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #7c5cff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
+
+        /* Chat UI (standard interview) */
+        .chat-container { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+        .chat-bubble-ai, .chat-bubble-user { display: flex; align-items: flex-start; gap: 15px; animation: fadeIn 0.3s ease; }
+        .chat-bubble-user { flex-direction: row-reverse; }
+        .chat-avatar { width: 50px; height: 50px; border-radius: 50%; background: #7c5cff; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .chat-content { max-width: 70%; background: rgba(255,255,255,0.1); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 15px 20px; }
+        .chat-bubble-user .chat-content { background: rgba(124,92,255,0.2); }
+        .chat-meta { font-size: 0.8rem; color: rgba(255,255,255,0.5); display: flex; gap: 10px; margin-top: 5px; }
+        .typing-indicator { display: flex; gap: 5px; padding: 15px 20px; background: rgba(255,255,255,0.05); border-radius: 20px; width: fit-content; }
+        .typing-indicator span { width: 8px; height: 8px; background: #7c5cff; border-radius: 50%; animation: typing 1.4s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%,60%,100% { transform: translateY(0); opacity:0.6; } 30% { transform: translateY(-10px); opacity:1; } }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .answer-area { margin-top:20px; padding:20px; background:rgba(255,255,255,0.03); border-radius:20px; border:1px solid rgba(255,255,255,0.1); }
+        .action-buttons { display:flex; gap:10px; flex-wrap:wrap; margin-top:15px; }
+
+        /* Exam mode specific */
+        .exam-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .exam-progress { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; flex: 1; margin: 0 20px; }
+        .exam-progress-fill { height: 100%; background: #7c5cff; width: 0%; border-radius: 4px; transition: width 0.3s; }
+        .exam-question { background: rgba(31, 31, 51, 0.8); border-radius: 20px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        .exam-question p { font-size: 1.2rem; margin-bottom: 20px; }
+        .exam-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .exam-option { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; }
+        .exam-option:hover { background: rgba(124,92,255,0.15); border-color: #7c5cff; }
+        .exam-option.selected { background: rgba(124,92,255,0.3); border-color: #7c5cff; }
+        .exam-option input { margin-right: 10px; }
+        .exam-textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; color: white; font-size: 1rem; min-height: 120px; }
+        .exam-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+
+        /* Video interview */
+        #videoContainer { position: relative; width: 100%; max-width: 640px; margin: 20px auto; }
+        #video, #canvas { width: 100%; border-radius: 20px; border: 2px solid #7c5cff; }
+        #canvas { display: none; }
+        .confidence-meter { background: rgba(31, 31, 51, 0.8); padding: 15px; border-radius: 20px; margin: 20px 0; text-align: center; }
+        .confidence-bar { height: 20px; background: #333; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .confidence-fill { height: 100%; background: linear-gradient(90deg, #ff4d4d, #7c5cff); width: 0%; transition: width 0.3s; }
+
+        /* Resume job cards */
+        .job-card { background: rgba(31, 31, 51, 0.8); border-radius: 20px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .job-card:hover { transform: scale(1.02); background: rgba(124,92,255,0.2); border-color: #7c5cff; }
+        .apply-btn { background: #7c5cff; border: none; border-radius: 40px; padding: 10px 20px; color: white; text-decoration: none; }
+        .apply-btn:hover { background: #5f3dc4; }
+
+        /* Other */
+        .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+        .mode-card { background: rgba(31,31,51,0.6); border-radius: 20px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .mode-card:hover { background: rgba(124,92,255,0.2); transform: translateY(-5px); }
+        .mode-card i { font-size: 2.5rem; color: #7c5cff; }
+        .selector-row select { padding: 12px; border-radius: 30px; background: rgba(31,31,51,0.8); border: 1px solid #444; color: white; }
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #7c5cff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            z-index: 9999;
-            animation: slideIn 0.3s;
-        }
+        .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 12px 24px; border-radius: 8px; z-index: 9999; animation: slideIn 0.3s; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .badge-container {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        .badge {
-            background: #2a2a44;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .badge-container { display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0; }
+        .badge { background: #2a2a44; padding: 8px 16px; border-radius: 30px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
         .badge i { color: gold; }
-        .mcq-option {
-            display: block;
-            margin: 8px 0;
-            padding: 8px;
-            background: #1f1f33;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .editor-container {
-            height: 300px;
-            border: 1px solid #444;
-            margin-top: 10px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            background: #1f1f33;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .file-upload-area {
-            background: #1f1f33;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin: 20px 0;
-            cursor: pointer;
-        }
-        .score-ring {
-            width:150px;
-            height:150px;
-            border-radius:50%;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            background:conic-gradient(#7c5cff 0deg, #333 0deg);
-            margin:20px auto;
-        }
-        .stars {
-            font-size:24px;
-            color:#ffc107;
-        }
-        .rating-label {
-            font-size:20px;
-            font-weight:bold;
-        }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 10px; background: #1f1f33; border-radius: 8px; margin-bottom: 8px; }
+        .file-upload-area { background: #1f1f33; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; cursor: pointer; }
+        .score-ring { width:150px; height:150px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:conic-gradient(#7c5cff 0deg, #333 0deg); margin:20px auto; }
+        .stars { font-size:24px; color:#ffc107; }
+        .rating-label { font-size:20px; font-weight:bold; }
         .excellent { color: #4caf50; }
         .good { color: #8bc34a; }
         .average { color: #ffc107; }
         .poor { color: #f44336; }
-
-        /* Chat UI */
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .chat-bubble-ai {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            animation: fadeIn 0.3s ease;
-        }
-        .chat-bubble-user {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            flex-direction: row-reverse;
-            animation: fadeIn 0.3s ease;
-        }
-        .chat-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #7c5cff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 5px 15px rgba(124,92,255,0.3);
-        }
-        .chat-content {
-            max-width: 70%;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 15px 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .chat-bubble-user .chat-content {
-            background: rgba(124,92,255,0.2);
-            border-color: rgba(124,92,255,0.3);
-        }
-        .chat-question {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        .chat-meta {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.5);
-            display: flex;
-            gap: 10px;
-            margin-top: 5px;
-        }
-        .typing-indicator {
-            display: flex;
-            gap: 5px;
-            padding: 15px 20px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            width: fit-content;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #7c5cff;
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
-            30% { transform: translateY(-10px); opacity: 1; }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .answer-area {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-
-        /* Exam & Video specific */
-        .exam-question {
-            background: rgba(31, 31, 51, 0.8);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .exam-question p {
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-        .exam-question label {
-            display: block;
-            margin: 8px 0;
-            padding: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .exam-question input[type="radio"] {
-            margin-right: 10px;
-        }
-        #videoContainer {
-            position: relative;
-            width: 100%;
-            max-width: 640px;
-            margin: 20px auto;
-        }
-        #video, #canvas {
-            width: 100%;
-            border-radius: 20px;
-            border: 2px solid #7c5cff;
-        }
-        #canvas {
-            display: none;
-        }
-        .confidence-meter {
-            background: rgba(31, 31, 51, 0.8);
-            padding: 15px;
-            border-radius: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .confidence-bar {
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        .confidence-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff4d4d, #7c5cff);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        /* ===== MODERN INTERVIEW SECTION ===== */
-        .mode-selector {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin: 20px 0 10px;
-            justify-content: center;
-        }
-        .mode-card {
-            flex: 1 1 180px;
-            background: rgba(31, 31, 51, 0.6);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            transform: translateZ(5px);
-        }
-        .mode-card:hover {
-            transform: translateZ(15px) scale(1.05);
-            background: rgba(124,92,255,0.2);
-            border-color: #7c5cff;
-            box-shadow: 0 15px 30px rgba(124,92,255,0.4);
-        }
-        .mode-card i {
-            font-size: 2.5rem;
-            color: #7c5cff;
-            margin-bottom: 10px;
-        }
-        .mode-card h4 {
-            margin-bottom: 5px;
-            font-size: 1.2rem;
-        }
-        .mode-card p {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.6);
-        }
-        .selector-row {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-        .selector-row select {
-            flex: 1 1 200px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(31, 31, 51, 0.8);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            font-size: 1rem;
-        }
+        .ai-coach-float { position: fixed; bottom: 30px; right: 30px; background: rgba(20,20,35,0.9); backdrop-filter: blur(10px); border: 1px solid rgba(124,92,255,0.3); border-radius: 60px; padding: 15px 25px; display: flex; align-items: center; gap: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); z-index: 1000; cursor: pointer; animation: float 3s infinite; }
+        .ai-coach-float .emoji { font-size: 2.5rem; }
+        .ai-coach-float .scroll-indicator { width: 30px; height: 30px; background: rgba(124,92,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: bounce 2s infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
     </style>
 </head>
 <body>
 
-<!-- Sidebar (3D) -->
+<!-- Sidebar -->
 <div class="sidebar">
-    <h2><i class="fas fa-robot"></i> <span>AI Smart</span></h2>
-    <button onclick="showSection('dashboard')"><i class="fas fa-home"></i> <span>Dashboard</span></button>
-    <button onclick="showSection('resume')"><i class="fas fa-file-alt"></i> <span>Resume Analyzer</span></button>
-    <button onclick="showSection('interview')"><i class="fas fa-comments"></i> <span>Interview</span></button>
-    <button onclick="showSection('history')"><i class="fas fa-history"></i> <span>History</span></button>
-    <button onclick="showSection('analytics')"><i class="fas fa-chart-line"></i> <span>Analytics</span></button>
-    <button onclick="showSection('leaderboardPage')"><i class="fas fa-trophy"></i> <span>Leaderboard</span></button>
-    <button onclick="showSection('profile')"><i class="fas fa-user"></i> <span>Profile</span></button>
-    <hr style="border-color:#333; margin:20px 0;">
-    <button onclick="toggleTheme()"><i class="fas fa-moon"></i> <span>Dark/Light</span></button>
-    <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
+    <h2><i class="fas fa-robot"></i> AI Smart</h2>
+    <button onclick="showSection('dashboard')" id="btn-dashboard"><i class="fas fa-home"></i> Dashboard</button>
+    <button onclick="showSection('resume')" id="btn-resume"><i class="fas fa-file-alt"></i> Resume Analyzer</button>
+    <button onclick="showSection('interview')" id="btn-interview"><i class="fas fa-comments"></i> Interview</button>
+    <button onclick="showSection('history')" id="btn-history"><i class="fas fa-history"></i> History</button>
+    <button onclick="showSection('analytics')" id="btn-analytics"><i class="fas fa-chart-line"></i> Analytics</button>
+    <button onclick="showSection('leaderboardPage')" id="btn-leaderboard"><i class="fas fa-trophy"></i> Leaderboard</button>
+    <button onclick="showSection('profile')" id="btn-profile"><i class="fas fa-user"></i> Profile</button>
+    <hr>
+    <div class="sidebar-footer">
+        <button onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark/Light</button>
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
 </div>
 
 <!-- Main Content -->
@@ -642,37 +298,21 @@
     <div id="dashboardSection">
         <h1>Overview</h1>
         <div class="summary">
-            <div>
-                <div class="ring" id="avgRing">0%</div>
-                <p>Average</p>
-            </div>
-            <div>
-                <div class="ring" id="bestRing">0%</div>
-                <p>Best</p>
-            </div>
-            <div>
-                <h2 id="total">0</h2>
-                <p>Total Interviews</p>
-            </div>
-            <div>
-                <h2 id="streak">0</h2>
-                <p>🔥 Streak</p>
-            </div>
+            <div><div class="ring" id="avgRing">0%</div><p>Average</p></div>
+            <div><div class="ring" id="bestRing">0%</div><p>Best</p></div>
+            <div><h2 id="total">0</h2><p>Total Interviews</p></div>
+            <div><h2 id="streak">0</h2><p>🔥 Streak</p></div>
         </div>
 
         <div class="card">
             <h3><i class="fas fa-star"></i> Your Progress</h3>
             <p>Level <span id="level">1</span> · XP <span id="xp">0</span></p>
-            <div class="progressBar">
-                <div class="progressInner" id="xpProgress" style="width:0%"></div>
-            </div>
+            <div class="progressBar"><div class="progressInner" id="xpProgress" style="width:0%"></div></div>
         </div>
 
-        <div class="card" style="border: 2px solid #7c5cff;">
+        <div class="card" style="border:2px solid #7c5cff;">
             <h3><i class="fas fa-calendar-day"></i> Daily Challenge</h3>
-            <div id="dailyChallengeContent">
-                <p>Loading today's challenge...</p>
-            </div>
+            <div id="dailyChallengeContent"><p>Loading...</p></div>
         </div>
 
         <div class="card">
@@ -683,35 +323,30 @@
 
         <div class="card">
             <h3><i class="fas fa-lightbulb"></i> AI Insight</h3>
-            <p id="aiInsight">Based on your last interview, focus on system design questions.</p>
+            <p id="aiInsight">Keep practicing to see insights.</p>
         </div>
     </div>
 
     <!-- RESUME ANALYZER -->
     <div id="resumeSection" class="card" style="display:none">
         <h2><i class="fas fa-file-alt"></i> Resume Analyzer</h2>
-        <p>Upload your resume (PDF, DOCX, or TXT) to get a detailed analysis and personalized job recommendations.</p>
-        
+        <p>Upload your resume to get analysis and job recommendations.</p>
         <div class="file-upload-area" onclick="document.getElementById('resumeFile').click()">
-            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #7c5cff; margin-bottom: 10px;"></i>
-            <p>Drag & drop or click to browse</p>
-            <input type="file" id="resumeFile" accept=".pdf,.docx,.txt" style="display: none;" onchange="handleFileSelect()">
+            <i class="fas fa-cloud-upload-alt" style="font-size:48px; color:#7c5cff;"></i>
+            <p>Click to browse</p>
+            <input type="file" id="resumeFile" accept=".pdf,.docx,.txt" style="display:none;" onchange="handleFileSelect()">
             <span id="fileName">No file chosen</span>
         </div>
-
-        <button class="btn" onclick="uploadResume()" style="width: 100%;">Analyze Resume</button>
-
+        <button class="btn" onclick="uploadResume()" style="width:100%;">Analyze</button>
         <div id="resumeLoading" class="spinner" style="display:none;"></div>
-        <div id="resumeResult" style="display: none;"></div>
-        <div id="jobSuggestions" style="margin-top: 20px;"></div>
+        <div id="resumeResult" style="display:none;"></div>
+        <div id="jobSuggestions"></div>
     </div>
 
-    <!-- INTERVIEW SECTION (REDESIGNED UI) -->
+    <!-- INTERVIEW SECTION -->
     <div id="interviewSection" class="card" style="display:none">
-        <h2 style="text-align:center; margin-bottom:20px;"><i class="fas fa-comments"></i> AI Interview</h2>
-        
-        <!-- Row 1: Role and difficulty selectors -->
-        <div class="selector-row">
+        <h2 style="text-align:center;"><i class="fas fa-comments"></i> AI Interview</h2>
+        <div class="selector-row" style="display:flex; gap:15px; justify-content:center; margin-bottom:30px;">
             <select id="role">
                 <option value="frontend">Frontend</option>
                 <option value="backend">Backend</option>
@@ -729,12 +364,11 @@
             </select>
         </div>
 
-        <!-- Row 2: Mode cards (buttons) -->
         <div class="mode-selector">
             <div class="mode-card" onclick="startInterview()">
                 <i class="fas fa-comment-dots"></i>
                 <h4>Standard</h4>
-                <p>5 AI‑generated questions</p>
+                <p>5 AI questions</p>
             </div>
             <div class="mode-card" onclick="startExam()">
                 <i class="fas fa-pencil-alt"></i>
@@ -744,20 +378,16 @@
             <div class="mode-card" onclick="startVideoInterview()">
                 <i class="fas fa-video"></i>
                 <h4>Video Interview</h4>
-                <p>AI asks, you answer on camera</p>
+                <p>Camera & confidence</p>
             </div>
         </div>
 
-        <!-- Timer and progress -->
-        <div id="timer" style="font-size:20px; text-align:center; margin:10px 0;"></div>
-        <div class="progressBar">
-            <div class="progressInner" id="progressInner"></div>
-        </div>
+        <div id="timer" style="font-size:20px; text-align:center;"></div>
+        <div class="progressBar"><div class="progressInner" id="progressInner"></div></div>
 
-        <!-- Dynamic areas for each mode -->
-        <div id="questionArea" class="chat-container" style="display: none;"></div>
-        <div id="examArea" style="display: none;"></div>
-        <div id="videoArea" style="display: none;"></div>
+        <div id="questionArea" class="chat-container" style="display:none;"></div>
+        <div id="examArea" style="display:none;"></div>
+        <div id="videoArea" style="display:none;"></div>
     </div>
 
     <!-- HISTORY -->
@@ -779,7 +409,7 @@
         </div>
         <canvas id="trendChart" style="max-height:300px; margin-bottom:30px;"></canvas>
         <canvas id="radarChart" style="max-height:300px;"></canvas>
-        <div id="skillGap" style="margin-top:20px;"></div>
+        <div id="skillGap"></div>
         <canvas id="skillChart" style="max-height:300px; margin-top:30px;"></canvas>
     </div>
 
@@ -787,7 +417,7 @@
     <div id="leaderboardPageSection" class="card" style="display:none">
         <h2><i class="fas fa-trophy"></i> Leaderboard</h2>
         <div id="leaderboardList"></div>
-        <p class="note">* Only users with public profiles appear here.</p>
+        <p class="note">* Only public profiles appear.</p>
     </div>
 
     <!-- PROFILE -->
@@ -799,43 +429,36 @@
         <label>Email</label>
         <input id="email" type="email" placeholder="Email">
         <label>Theme</label>
-        <select id="themeSelect">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-        </select>
-        <label>Make profile public (appear on leaderboard)</label>
+        <select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select>
+        <label>Make profile public</label>
         <input type="checkbox" id="publicProfile">
-        <button class="btn" onclick="updateProfile()">Update Profile</button>
-        <button class="btn" onclick="exportData()">Download My Data (CSV)</button>
+        <button class="btn" onclick="updateProfile()">Update</button>
+        <button class="btn" onclick="exportData()">Download CSV</button>
     </div>
 </div>
 
-<!-- Floating AI Coach Widget -->
+<!-- Floating AI Coach -->
 <div class="ai-coach-float" onclick="showSection('dashboard')">
     <span class="emoji">🤖</span>
     <span class="text">Personal AI Coach</span>
     <span class="scroll-indicator"><i class="fas fa-chevron-down"></i></span>
-    <span style="font-size: 0.9rem; opacity: 0.7;">Coming Soon</span>
+    <span style="font-size:0.9rem; opacity:0.7;">Coming Soon</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
 <script>
     (function() {
-        // ---------- CONFIG ----------
-        const BASE_URL = window.location.origin; // auto-detect
+        const BASE_URL = window.location.origin;
         const token = localStorage.getItem("token");
-        if (!token) { location.href = "login.html"; }
+        if (!token) location.href = "login.html";
 
         // Global state
         let questions = [], currentIndex = 0, totalScore = 0, timeLeft = 30, timerInterval;
         let currentRole = '', currentDifficulty = '';
         let monacoEditor = null;
-        let examQuestions = [];
-        let videoStream = null;
-        let videoInterval = null;
-        let currentVideoQuestion = null;
-        let confidenceScore = 50;
-        let faceApiAvailable = true; // will be set to false if models fail
+        let examQuestions = [], examAnswers = [], currentExamIndex = 0;
+        let videoStream = null, videoInterval = null, currentVideoQuestion = null, confidenceScore = 50;
+        let faceApiAvailable = true;
 
         // ---------- UTILITIES ----------
         function showToast(msg) {
@@ -845,19 +468,14 @@
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
-
         function showLoading(containerId, show) {
             const el = document.getElementById(containerId);
             if (el) el.style.display = show ? 'block' : 'none';
         }
-
-        // ---------- THEME ----------
-        window.toggleTheme = function() {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-        };
-        if (localStorage.getItem('theme') === 'light') {
-            document.body.classList.add('light-mode');
+        function setActiveButton(section) {
+            document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(`btn-${section}`);
+            if (btn) btn.classList.add('active');
         }
 
         // ---------- SECTION SWITCHING ----------
@@ -867,6 +485,7 @@
                 if (sec) sec.style.display = "none";
             });
             document.getElementById(id + "Section").style.display = "block";
+            setActiveButton(id === 'leaderboardPage' ? 'leaderboard' : id);
             if (id === 'dashboard') loadDashboard();
             if (id === 'analytics') loadAnalytics();
             if (id === 'history') loadHistory();
@@ -874,22 +493,25 @@
             if (id === 'profile') loadProfile();
         };
 
+        // ---------- THEME ----------
+        window.toggleTheme = function() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        };
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+
         // ---------- DASHBOARD ----------
         async function loadDashboard() {
             try {
                 updatePractice();
-                const userRes = await fetch(BASE_URL + '/api/user/profile', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const userRes = await fetch(BASE_URL + '/api/user/profile', { headers: { Authorization: "Bearer " + token } });
                 const user = await userRes.json();
                 document.getElementById('level').innerText = user.level || 1;
                 document.getElementById('xp').innerText = user.xp || 0;
                 const progress = ((user.xp % 100) / 100) * 100;
                 document.getElementById('xpProgress').style.width = progress + '%';
 
-                const histRes = await fetch(BASE_URL + '/api/interview/history', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const histRes = await fetch(BASE_URL + '/api/interview/history', { headers: { Authorization: "Bearer " + token } });
                 const data = await histRes.json();
                 const scores = data.map(d => d.totalScore);
                 const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
@@ -907,12 +529,9 @@
                 if (best >= 90) badges.push('🏆 Top Performer');
                 document.getElementById('badgeList').innerHTML = badges.map(b => `<span class="badge"><i class="fas fa-award"></i> ${b}</span>`).join('');
 
-                document.getElementById('aiInsight').innerText = scores.length ? "Keep practicing! Your consistency is improving." : "Start your first interview to get insights.";
-
+                document.getElementById('aiInsight').innerText = scores.length ? "Keep practicing! You're improving." : "Start your first interview.";
                 loadDailyChallenge();
-            } catch (e) {
-                showToast('Failed to load dashboard');
-            }
+            } catch (e) { showToast('Failed to load dashboard'); }
         }
 
         function updatePractice() {
@@ -923,19 +542,16 @@
                 localStorage.setItem('practice', today);
                 streak++;
                 localStorage.setItem('streak', streak);
-                document.getElementById('practiceStatus').innerText = '✅ Practice logged today!';
+                document.getElementById('practiceStatus').innerText = '✅ Practiced today!';
             } else {
-                document.getElementById('practiceStatus').innerText = '🔥 Already practiced today';
+                document.getElementById('practiceStatus').innerText = '🔥 Already practiced';
             }
             document.getElementById('streak').innerText = streak;
         }
 
-        // ---------- DAILY CHALLENGE ----------
         async function loadDailyChallenge() {
             try {
-                const res = await fetch(BASE_URL + '/api/challenge/today', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const res = await fetch(BASE_URL + '/api/challenge/today', { headers: { Authorization: "Bearer " + token } });
                 const challenge = await res.json();
                 document.getElementById('dailyChallengeContent').innerHTML = `
                     <p><strong>${challenge.question}</strong></p>
@@ -968,50 +584,39 @@
             try {
                 const res = await fetch(BASE_URL + '/api/challenge/submit', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: "Bearer " + token
-                    },
+                    headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
                     body: JSON.stringify({ answer })
                 });
                 const data = await res.json();
                 document.getElementById('challengeFeedback').innerHTML = `<p>Score: ${data.score} · XP earned: ${data.xpEarned}</p>`;
                 loadDashboard();
-            } catch (e) {
-                showToast('Submission failed');
-            }
+            } catch (e) { showToast('Submission failed'); }
         };
 
-        // ---------- STANDARD INTERVIEW ----------
+        // ---------- STANDARD INTERVIEW (FULL CODE) ----------
         window.startInterview = function() {
             document.getElementById('examArea').style.display = 'none';
             document.getElementById('videoArea').style.display = 'none';
             document.getElementById('questionArea').style.display = 'block';
-            document.getElementById('timer').innerText = '';
-            _startInterviewInternal();
+            _startInterview();
         };
 
-        async function _startInterviewInternal() {
+        async function _startInterview() {
             try {
                 currentRole = document.getElementById('role').value;
                 currentDifficulty = document.getElementById('difficulty').value;
                 document.getElementById('questionArea').innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
                 const res = await fetch(BASE_URL + '/api/interview/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: "Bearer " + token
-                    },
-                    body: JSON.stringify({ role: currentRole, difficulty: currentDifficulty })
+                    method:'POST',
+                    headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
+                    body:JSON.stringify({ role:currentRole, difficulty:currentDifficulty })
                 });
                 const data = await res.json();
                 questions = data.questions;
                 currentIndex = 0;
                 totalScore = 0;
                 showQuestion();
-            } catch (e) {
-                showToast('Failed to start interview');
-            }
+            } catch(e) { showToast('Failed to start interview'); }
         }
 
         function showQuestion() {
@@ -1140,10 +745,7 @@
             try {
                 const res = await fetch(BASE_URL + '/api/interview/evaluate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: "Bearer " + token
-                    },
+                    headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
                     body: JSON.stringify({ answer, questionObj: q, timeSpent: 30 - timeLeft })
                 });
                 const data = await res.json();
@@ -1188,16 +790,8 @@
 
             await fetch(BASE_URL + '/api/interview/save', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: "Bearer " + token
-                },
-                body: JSON.stringify({
-                    role: currentRole,
-                    difficulty: currentDifficulty,
-                    totalScore: percent,
-                    answers
-                })
+                headers: { 'Content-Type': 'application/json', Authorization: "Bearer " + token },
+                body: JSON.stringify({ role: currentRole, difficulty: currentDifficulty, totalScore: percent, answers })
             });
             updatePractice();
         }
@@ -1221,7 +815,7 @@
             doc.save('Interview_Report.pdf');
         };
 
-        // ---------- EXAM MODE ----------
+        // ---------- EXAM MODE (FULL WORKING) ----------
         window.startExam = async function() {
             const role = document.getElementById('role').value;
             const difficulty = document.getElementById('difficulty').value;
@@ -1233,96 +827,140 @@
 
             try {
                 const res = await fetch(BASE_URL + '/api/interview/exam', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ role, difficulty })
+                    method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+                    body:JSON.stringify({ role, difficulty })
                 });
                 const data = await res.json();
                 examQuestions = data.questions;
-                displayExam(examQuestions);
-            } catch (e) {
-                showToast('Failed to load exam');
-            }
+                examAnswers = [];
+                currentExamIndex = 0;
+                displayExam();
+            } catch(e) { showToast('Failed to load exam'); }
         };
 
-        function displayExam(questions) {
-            let html = '<h2>📝 Exam Mode</h2><form id="examForm">';
-            questions.forEach((q, idx) => {
-                if (q.type === 'mcq') {
-                    html += `
-                        <div class="exam-question">
-                            <p><strong>Q${idx+1}:</strong> ${q.question}</p>
-                            ${q.options.map(opt => `
-                                <label>
-                                    <input type="radio" name="q${idx}" value="${opt[0]}"> ${opt}
-                                </label>
-                            `).join('')}
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="exam-question">
-                            <p><strong>Q${idx+1}:</strong> ${q.question}</p>
-                            <textarea name="q${idx}" rows="4" placeholder="Your answer..." style="width:100%; background:#2a2a44; color:white; border:none; border-radius:8px; padding:10px;"></textarea>
-                        </div>
-                    `;
-                }
-            });
-            html += '<button type="button" class="btn" onclick="submitExam()">Submit Exam</button></form>';
+        function displayExam() {
+            let html = `
+                <div class="exam-header">
+                    <h2>📝 Exam Mode</h2>
+                    <span id="examCounter">1/${examQuestions.length}</span>
+                    <div class="exam-progress"><div class="exam-progress-fill" id="examProgressFill" style="width:${(1/examQuestions.length)*100}%"></div></div>
+                </div>
+                <div id="examQuestionsContainer"></div>
+                <div class="exam-footer">
+                    <button class="btn" onclick="prevExamQuestion()" id="prevBtn" disabled>Previous</button>
+                    <button class="btn" onclick="nextExamQuestion()" id="nextBtn">Next</button>
+                    <button class="btn" onclick="submitExam()" id="submitBtn" style="display:none;">Submit Exam</button>
+                </div>
+            `;
             document.getElementById('examArea').innerHTML = html;
+            renderExamQuestion(0);
+        }
+
+        function renderExamQuestion(index) {
+            const q = examQuestions[index];
+            const container = document.getElementById('examQuestionsContainer');
+            const counter = document.getElementById('examCounter');
+            const progress = document.getElementById('examProgressFill');
+            counter.innerText = `${index+1}/${examQuestions.length}`;
+            progress.style.width = `${((index+1)/examQuestions.length)*100}%`;
+
+            if (q.type === 'mcq') {
+                let optionsHtml = '';
+                q.options.forEach((opt, i) => {
+                    const letter = String.fromCharCode(65 + i);
+                    optionsHtml += `
+                        <div class="exam-option ${examAnswers[index] === letter ? 'selected' : ''}" onclick="selectMCQ(${index}, '${letter}')">
+                            <input type="radio" name="q${index}" value="${letter}" ${examAnswers[index] === letter ? 'checked' : ''}> ${opt}
+                        </div>
+                    `;
+                });
+                container.innerHTML = `
+                    <div class="exam-question">
+                        <p><strong>Q${index+1}:</strong> ${q.question}</p>
+                        <div class="exam-options">${optionsHtml}</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="exam-question">
+                        <p><strong>Q${index+1}:</strong> ${q.question}</p>
+                        <textarea class="exam-textarea" id="theoryAnswer${index}" placeholder="Your answer...">${examAnswers[index] || ''}</textarea>
+                    </div>
+                `;
+            }
+
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').style.display = index === examQuestions.length-1 ? 'none' : 'inline-block';
+            document.getElementById('submitBtn').style.display = index === examQuestions.length-1 ? 'inline-block' : 'none';
+        }
+
+        window.selectMCQ = function(index, letter) {
+            examAnswers[index] = letter;
+            // update UI
+            document.querySelectorAll('.exam-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            event.currentTarget.querySelector('input').checked = true;
+        };
+
+        window.nextExamQuestion = function() {
+            saveCurrentAnswer(currentExamIndex);
+            currentExamIndex++;
+            renderExamQuestion(currentExamIndex);
+        };
+        window.prevExamQuestion = function() {
+            saveCurrentAnswer(currentExamIndex);
+            currentExamIndex--;
+            renderExamQuestion(currentExamIndex);
+        };
+        function saveCurrentAnswer(index) {
+            const q = examQuestions[index];
+            if (q.type === 'mcq') {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                if (selected) examAnswers[index] = selected.value;
+            } else {
+                const textarea = document.getElementById(`theoryAnswer${index}`);
+                if (textarea) examAnswers[index] = textarea.value;
+            }
         }
 
         window.submitExam = async function() {
-            const form = document.getElementById('examForm');
-            const answers = [];
-            for (let i = 0; i < examQuestions.length; i++) {
-                const q = examQuestions[i];
-                if (q.type === 'mcq') {
-                    const radios = form.querySelectorAll(`input[name="q${i}"]:checked`);
-                    answers.push(radios.length ? radios[0].value : '');
-                } else {
-                    const textarea = form.querySelector(`textarea[name="q${i}"]`);
-                    answers.push(textarea ? textarea.value : '');
+            saveCurrentAnswer(currentExamIndex);
+            // check all answered
+            for (let i=0; i<examQuestions.length; i++) {
+                if (!examAnswers[i]) {
+                    showToast(`Please answer question ${i+1}`);
+                    currentExamIndex = i;
+                    renderExamQuestion(i);
+                    return;
                 }
             }
             try {
                 const res = await fetch(BASE_URL + '/api/interview/exam/evaluate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ questions: examQuestions, answers })
+                    method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+                    body:JSON.stringify({ questions: examQuestions, answers: examAnswers })
                 });
                 const result = await res.json();
-                let resultHtml = '<h2>📊 Exam Results</h2>';
-                result.results.forEach((r, i) => {
-                    resultHtml += `<p>Q${i+1}: Score ${r.score}/10 – ${r.feedback || (r.correct ? 'Correct' : 'Wrong')}</p>`;
+                let html = '<h2>📊 Exam Results</h2>';
+                result.results.forEach((r,i) => {
+                    html += `<p>Q${i+1}: Score ${r.score}/10 – ${r.feedback || (r.correct ? 'Correct' : 'Wrong')}</p>`;
                 });
-                resultHtml += `<h3>Total Score: ${result.totalScore}%</h3>`;
-                document.getElementById('examArea').innerHTML = resultHtml;
-            } catch (e) {
-                showToast('Submission failed');
-            }
+                html += `<h3>Total: ${result.totalScore}%</h3>`;
+                document.getElementById('examArea').innerHTML = html;
+            } catch(e) { showToast('Submission failed'); }
         };
 
-        // ---------- VIDEO INTERVIEW MODE (with face‑api fallback) ----------
+        // ---------- VIDEO INTERVIEW (with face-api fallback) ----------
         async function loadFaceApiModels() {
             try {
                 const MODEL_URL = 'https://unpkg.com/face-api.js@0.22.2/weights/';
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
                 faceApiAvailable = true;
-                console.log('Face‑api models loaded');
-            } catch (err) {
-                console.warn('Face‑api models failed to load, using random confidence');
+            } catch(err) {
+                console.warn('Face models failed, using random confidence');
                 faceApiAvailable = false;
             }
         }
-
         function startConfidenceDetection() {
             if (faceApiAvailable) {
                 const video = document.getElementById('video');
@@ -1330,27 +968,21 @@
                     try {
                         const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
                         if (detections.length > 0) {
-                            const expressions = detections[0].expressions;
-                            confidenceScore = Math.min(100, Math.round((expressions.happy + expressions.neutral + expressions.surprised) * 100));
-                        } else {
-                            confidenceScore = 50; // default if no face
-                        }
-                    } catch (e) {
-                        confidenceScore = 50;
-                    }
+                            const exp = detections[0].expressions;
+                            confidenceScore = Math.min(100, Math.round((exp.happy + exp.neutral + exp.surprised) * 100));
+                        } else confidenceScore = 50;
+                    } catch(e) { confidenceScore = 50; }
                     document.getElementById('confidenceValue').innerText = confidenceScore + '%';
                     document.getElementById('confidenceFill').style.width = confidenceScore + '%';
                 }, 1000);
             } else {
-                // Fallback: random confidence
                 videoInterval = setInterval(() => {
-                    confidenceScore = Math.floor(Math.random() * 30) + 70; // 70-100
+                    confidenceScore = Math.floor(Math.random() * 30) + 70;
                     document.getElementById('confidenceValue').innerText = confidenceScore + '%';
                     document.getElementById('confidenceFill').style.width = confidenceScore + '%';
                 }, 1000);
             }
         }
-
         window.startVideoInterview = async function() {
             const role = document.getElementById('role').value;
             const difficulty = document.getElementById('difficulty').value;
@@ -1360,94 +992,50 @@
             document.getElementById('timer').innerText = '';
             document.getElementById('videoArea').innerHTML = `
                 <h2>🎥 Video Interview</h2>
-                <div id="videoContainer">
-                    <video id="video" autoplay muted></video>
-                    <canvas id="canvas"></canvas>
-                </div>
-                <div class="confidence-meter">
-                    <p>Confidence: <span id="confidenceValue">50%</span></p>
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" id="confidenceFill" style="width:50%"></div>
-                    </div>
-                </div>
+                <div id="videoContainer"><video id="video" autoplay muted></video><canvas id="canvas"></canvas></div>
+                <div class="confidence-meter"><p>Confidence: <span id="confidenceValue">50%</span></p><div class="confidence-bar"><div class="confidence-fill" id="confidenceFill" style="width:50%"></div></div></div>
                 <div id="videoQuestionArea"></div>
-                <button class="btn" onclick="stopVideoInterview()">Stop Interview</button>
+                <button class="btn" onclick="stopVideoInterview()">Stop</button>
             `;
             await loadFaceApiModels();
             try {
                 videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const video = document.getElementById('video');
-                video.srcObject = videoStream;
-                video.play();
+                document.getElementById('video').srcObject = videoStream;
                 startConfidenceDetection();
                 fetchVideoQuestion(role, difficulty);
-            } catch (err) {
-                showToast('Camera access denied');
-            }
+            } catch(err) { showToast('Camera access denied'); }
         };
-
         async function fetchVideoQuestion(role, difficulty) {
             try {
                 const res = await fetch(BASE_URL + '/api/interview/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ role, difficulty })
+                    method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+                    body:JSON.stringify({ role, difficulty })
                 });
                 const data = await res.json();
                 currentVideoQuestion = data.questions[0];
                 document.getElementById('videoQuestionArea').innerHTML = `
-                    <div class="chat-bubble-ai">
-                        <div class="chat-avatar">🤖</div>
-                        <div class="chat-content">
-                            <div class="chat-question">${currentVideoQuestion.question}</div>
-                        </div>
-                    </div>
-                    <textarea id="videoAnswer" rows="4" placeholder="Your answer..." style="width:100%; margin-top:20px;"></textarea>
-                    <button class="btn" onclick="submitVideoAnswer()">Submit Answer</button>
+                    <div class="chat-bubble-ai"><div class="chat-avatar">🤖</div><div class="chat-content">${currentVideoQuestion.question}</div></div>
+                    <textarea id="videoAnswer" rows="4" style="width:100%; margin-top:20px;"></textarea>
+                    <button class="btn" onclick="submitVideoAnswer()">Submit</button>
                 `;
-            } catch (e) {
-                showToast('Failed to load question');
-            }
+            } catch(e) { showToast('Failed to load question'); }
         }
-
         window.submitVideoAnswer = async function() {
             const answer = document.getElementById('videoAnswer').value;
-            if (!answer) {
-                showToast('Please answer the question');
-                return;
-            }
+            if (!answer) { showToast('Please answer'); return; }
             try {
                 await fetch(BASE_URL + '/api/interview/video/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + token
-                    },
-                    body: JSON.stringify({
-                        role: document.getElementById('role').value,
-                        difficulty: document.getElementById('difficulty').value,
-                        question: currentVideoQuestion.question,
-                        answer,
-                        confidenceScore,
-                        timeSpent: 30
-                    })
+                    method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+                    body:JSON.stringify({ role:document.getElementById('role').value, difficulty:document.getElementById('difficulty').value, question:currentVideoQuestion.question, answer, confidenceScore, timeSpent:30 })
                 });
-                showToast('Answer saved with confidence ' + confidenceScore + '%');
+                showToast('Answer saved, confidence ' + confidenceScore + '%');
                 fetchVideoQuestion(document.getElementById('role').value, document.getElementById('difficulty').value);
-            } catch (e) {
-                showToast('Submission failed');
-            }
+            } catch(e) { showToast('Submission failed'); }
         };
-
         window.stopVideoInterview = function() {
             if (videoInterval) clearInterval(videoInterval);
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-            }
-            document.getElementById('videoArea').innerHTML = '<p>Interview ended. Thank you!</p>';
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            document.getElementById('videoArea').innerHTML = '<p>Interview ended.</p>';
         };
 
         // ---------- RESUME ANALYZER ----------
@@ -1455,244 +1043,121 @@
             const file = document.getElementById('resumeFile').files[0];
             document.getElementById('fileName').innerText = file ? file.name : 'No file chosen';
         };
-
-        function getJobLink(skill) {
-            const encoded = encodeURIComponent(skill + " developer");
-            return `https://www.indeed.com/jobs?q=${encoded}`;
-        }
-
+        function getJobLink(skill) { return `https://www.indeed.com/jobs?q=${encodeURIComponent(skill+' developer')}`; }
         window.uploadResume = async function() {
             const file = document.getElementById('resumeFile').files[0];
-            if (!file) return showToast('Please select a file');
-
-            const fd = new FormData();
-            fd.append('resume', file);
-
+            if (!file) return showToast('Select a file');
+            const fd = new FormData(); fd.append('resume', file);
             showLoading('resumeLoading', true);
-            document.getElementById('resumeResult').style.display = 'none';
-            document.getElementById('jobSuggestions').innerHTML = '';
-
             try {
-                const res = await fetch(BASE_URL + '/api/resume/upload', {
-                    method: 'POST',
-                    headers: { Authorization: "Bearer " + token },
-                    body: fd
-                });
+                const res = await fetch(BASE_URL+'/api/resume/upload', { method:'POST', headers:{ Authorization:'Bearer '+token }, body:fd });
                 const data = await res.json();
-
-                const score = data.score || Math.floor(Math.random() * 30) + 70;
-                const skills = data.matchedSkills || ['JavaScript', 'React', 'Node.js', 'Python', 'SQL'];
-
-                let stars = 0, label = '', labelClass = '';
-                if (score >= 90) { stars = 5; label = 'Excellent'; labelClass = 'excellent'; }
-                else if (score >= 75) { stars = 4; label = 'Good'; labelClass = 'good'; }
-                else if (score >= 60) { stars = 3; label = 'Average'; labelClass = 'average'; }
-                else { stars = 2; label = 'Needs Improvement'; labelClass = 'poor'; }
-
+                const score = data.score || Math.floor(Math.random()*30)+70;
+                const skills = data.matchedSkills || ['JavaScript','React','Node.js'];
+                let stars=0, label='', labelClass='';
+                if(score>=90) { stars=5; label='Excellent'; labelClass='excellent'; }
+                else if(score>=75) { stars=4; label='Good'; labelClass='good'; }
+                else if(score>=60) { stars=3; label='Average'; labelClass='average'; }
+                else { stars=2; label='Needs Improvement'; labelClass='poor'; }
                 let starHtml = '';
-                for (let i = 1; i <= 5; i++) {
-                    starHtml += i <= stars ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
-                }
-
+                for(let i=1;i<=5;i++) starHtml += i<=stars ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
                 document.getElementById('resumeResult').innerHTML = `
-                    <h3 style="margin: 20px 0 10px;">Analysis Result</h3>
-                    <div style="text-align: center;">
-                        <div class="score-ring" style="background:conic-gradient(#7c5cff ${score*3.6}deg, #333 0deg);">
-                            <span style="font-size:32px;">${score}%</span>
-                        </div>
-                        <div class="stars">${starHtml}</div>
-                        <div class="rating-label ${labelClass}">${label}</div>
-                        <p style="margin-top:15px;"><strong>Matched Skills:</strong> ${skills.join(', ')}</p>
-                    </div>
+                    <h3>Analysis</h3>
+                    <div class="score-ring" style="background:conic-gradient(#7c5cff ${score*3.6}deg, #333 0deg);"><span>${score}%</span></div>
+                    <div class="stars">${starHtml}</div>
+                    <div class="rating-label ${labelClass}">${label}</div>
+                    <p>Skills: ${skills.join(', ')}</p>
                 `;
                 document.getElementById('resumeResult').style.display = 'block';
-
-                let jobsHtml = '<h3>Recommended Jobs for You</h3>';
-                skills.slice(0, 5).forEach(skill => {
-                    const jobTitle = skill.includes('Developer') ? skill : skill + ' Developer';
+                let jobsHtml = '<h3>Recommended Jobs</h3>';
+                skills.slice(0,5).forEach(skill => {
                     jobsHtml += `
-                        <div class="job-card">
-                            <div class="job-info">
-                                <h4>${jobTitle}</h4>
-                                <p><i class="fas fa-building"></i> Top Tech Company · Remote</p>
-                            </div>
-                            <a href="${getJobLink(skill)}" target="_blank" class="apply-btn">
-                                Apply Now <i class="fas fa-external-link-alt"></i>
-                            </a>
-                        </div>
+                        <div class="job-card"><div><h4>${skill} Developer</h4><p>Remote</p></div>
+                        <a href="${getJobLink(skill)}" target="_blank" class="apply-btn">Apply</a></div>
                     `;
                 });
                 document.getElementById('jobSuggestions').innerHTML = jobsHtml;
-
-            } catch (e) {
-                showToast('Resume analysis failed');
-                console.error(e);
-            } finally {
-                showLoading('resumeLoading', false);
-            }
+            } catch(e) { showToast('Analysis failed'); } finally { showLoading('resumeLoading',false); }
         };
 
         // ---------- HISTORY ----------
         window.loadHistory = async function() {
             try {
-                const res = await fetch(BASE_URL + '/api/interview/history', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const res = await fetch(BASE_URL+'/api/interview/history', { headers:{ Authorization:'Bearer '+token } });
                 const data = await res.json();
-                if (!data.length) {
-                    document.getElementById('historyBox').innerHTML = '<p>No interviews yet. Start one!</p>';
-                    return;
-                }
+                if(!data.length) { document.getElementById('historyBox').innerHTML = '<p>No history yet.</p>'; return; }
                 document.getElementById('historyBox').innerHTML = data.map(d => `
                     <div style="background:#2a2a44; padding:10px; border-radius:8px; margin-bottom:8px;">
-                        <strong>${d.role}</strong> (${d.difficulty || 'N/A'}) - Score: ${d.totalScore}% · XP: ${d.xpEarned || 0}<br>
-                        <small>${new Date(d.date).toLocaleDateString()}</small>
+                        <strong>${d.role}</strong> - Score: ${d.totalScore}%<br><small>${new Date(d.date).toLocaleDateString()}</small>
                     </div>
                 `).join('');
-            } catch (e) {
-                showToast('Failed to load history');
-            }
+            } catch(e) { showToast('Failed to load history'); }
         };
 
         // ---------- ANALYTICS ----------
         window.loadAnalytics = async function() {
             try {
-                const res = await fetch(BASE_URL + '/api/interview/history', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const res = await fetch(BASE_URL+'/api/interview/history', { headers:{ Authorization:'Bearer '+token } });
                 const data = await res.json();
                 const filter = document.getElementById('chartFilter').value;
                 let filtered = data;
-                if (filter === 'week') filtered = data.slice(-7);
-                if (filter === 'month') filtered = data.slice(-30);
+                if(filter==='week') filtered = data.slice(-7);
+                if(filter==='month') filtered = data.slice(-30);
 
-                const ctx1 = document.getElementById('trendChart').getContext('2d');
-                new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: filtered.map((d,i) => 'Attempt '+(i+1)),
-                        datasets: [{
-                            label: 'Score %',
-                            data: filtered.map(d => d.totalScore),
-                            borderColor: '#7c5cff',
-                            tension: 0.1
-                        }]
-                    },
-                    options: { responsive: true }
+                new Chart(document.getElementById('trendChart'), {
+                    type:'line', data:{ labels:filtered.map((_,i)=>'Attempt '+(i+1)), datasets:[{ label:'Score %', data:filtered.map(d=>d.totalScore), borderColor:'#7c5cff' }] }
                 });
-
-                const ctx2 = document.getElementById('radarChart').getContext('2d');
-                new Chart(ctx2, {
-                    type: 'radar',
-                    data: {
-                        labels: ['Technical', 'Communication', 'Confidence', 'Clarity', 'Problem Solving'],
-                        datasets: [{
-                            label: 'Your Score',
-                            data: [70, 75, 80, 65, 85],
-                            borderColor: '#7c5cff',
-                            backgroundColor: 'rgba(124,92,255,0.2)'
-                        }]
-                    }
+                new Chart(document.getElementById('radarChart'), {
+                    type:'radar', data:{ labels:['Technical','Communication','Confidence','Clarity','Problem Solving'], datasets:[{ label:'Your Score', data:[70,75,80,65,85], borderColor:'#7c5cff' }] }
                 });
-
-                const skillRes = await fetch(BASE_URL + '/api/interview/skills', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const skillRes = await fetch(BASE_URL+'/api/interview/skills', { headers:{ Authorization:'Bearer '+token } });
                 const skillData = await skillRes.json();
-                const labels = Object.keys(skillData);
-                const values = Object.values(skillData);
-                const ctx3 = document.getElementById('skillChart').getContext('2d');
-                new Chart(ctx3, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Average Score per Skill',
-                            data: values,
-                            backgroundColor: '#7c5cff'
-                        }]
-                    }
-                });
-
-                document.getElementById('skillGap').innerHTML = `<p><strong>🔍 Weakest skill:</strong> ${labels.reduce((a,b) => skillData[a] < skillData[b] ? a : b, labels[0])}</p>`;
-            } catch (e) {
-                showToast('Analytics error');
-            }
+                const labels = Object.keys(skillData), values = Object.values(skillData);
+                new Chart(document.getElementById('skillChart'), { type:'bar', data:{ labels, datasets:[{ label:'Skill Score', data:values, backgroundColor:'#7c5cff' }] } });
+                document.getElementById('skillGap').innerHTML = `<p>Weakest: ${labels.reduce((a,b)=>skillData[a]<skillData[b]?a:b,labels[0])}</p>`;
+            } catch(e) { showToast('Analytics error'); }
         };
 
         // ---------- LEADERBOARD ----------
         async function loadLeaderboard() {
             try {
-                const res = await fetch(BASE_URL + '/api/user/leaderboard');
+                const res = await fetch(BASE_URL+'/api/user/leaderboard');
                 const users = await res.json();
-                document.getElementById('leaderboardList').innerHTML = users.map((u, i) => `
-                    <div class="leaderboard-item">
-                        <span>${i+1}. ${u.name}</span>
-                        <span>Level ${u.level} · ${u.xp} XP</span>
-                    </div>
+                document.getElementById('leaderboardList').innerHTML = users.map((u,i)=>`
+                    <div class="leaderboard-item"><span>${i+1}. ${u.name}</span><span>Level ${u.level} · ${u.xp} XP</span></div>
                 `).join('');
-            } catch (e) {
-                document.getElementById('leaderboardList').innerHTML = '<p>Failed to load leaderboard.</p>';
-            }
+            } catch(e) { document.getElementById('leaderboardList').innerHTML = '<p>Failed to load.</p>'; }
         }
 
         // ---------- PROFILE ----------
         async function loadProfile() {
             try {
-                const res = await fetch(BASE_URL + '/api/user/profile', {
-                    headers: { Authorization: "Bearer " + token }
-                });
+                const res = await fetch(BASE_URL+'/api/user/profile', { headers:{ Authorization:'Bearer '+token } });
                 const user = await res.json();
                 document.getElementById('name').value = user.name || '';
                 document.getElementById('email').value = user.email || '';
                 document.getElementById('themeSelect').value = user.theme || 'dark';
                 document.getElementById('publicProfile').checked = user.publicProfile || false;
-            } catch (e) {
-                showToast('Could not load profile');
-            }
+            } catch(e) { showToast('Could not load profile'); }
         }
-
         window.updateProfile = async function() {
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const theme = document.getElementById('themeSelect').value;
-            const publicProfile = document.getElementById('publicProfile').checked;
+            const name = document.getElementById('name').value, email = document.getElementById('email').value,
+                  theme = document.getElementById('themeSelect').value, publicProfile = document.getElementById('publicProfile').checked;
             try {
-                const res = await fetch(BASE_URL + '/api/user/profile', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: "Bearer " + token
-                    },
-                    body: JSON.stringify({ name, email, theme, publicProfile })
+                const res = await fetch(BASE_URL+'/api/user/profile', {
+                    method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
+                    body:JSON.stringify({ name, email, theme, publicProfile })
                 });
-                if (res.ok) {
-                    showToast('Profile updated');
-                    if (theme === 'light') document.body.classList.add('light-mode');
-                    else document.body.classList.remove('light-mode');
-                    localStorage.setItem('theme', theme);
-                } else {
-                    showToast('Update failed');
-                }
-            } catch (e) {
-                showToast('Update failed');
-            }
+                if(res.ok) { showToast('Profile updated'); if(theme==='light') document.body.classList.add('light-mode'); else document.body.classList.remove('light-mode'); localStorage.setItem('theme', theme); }
+                else showToast('Update failed');
+            } catch(e) { showToast('Update failed'); }
         };
-
-        window.exportData = function() {
-            window.location.href = BASE_URL + '/api/user/export?token=' + token;
-        };
+        window.exportData = function() { window.location.href = BASE_URL + '/api/user/export?token=' + token; };
 
         // ---------- LOGOUT ----------
-        window.logout = function() {
-            localStorage.removeItem('token');
-            location.href = 'login.html';
-        };
+        window.logout = function() { localStorage.removeItem('token'); location.href = 'login.html'; };
 
         // ---------- INIT ----------
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-        }
         showSection('dashboard');
     })();
 </script>
