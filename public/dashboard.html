@@ -1305,7 +1305,7 @@
                                 <h4>📈 How to Improve</h4>
                                 <p>${feedbackText}</p>
                             </div>
-                            <button class="btn" onclick="downloadEnhancedReport(${percent}, '${feedbackText.replace(/'/g, "\\'")}')">Download Full Report (PDF)</button>
+                            <button class="btn" onclick="downloadEnhancedReport(${percent}, ${JSON.stringify(feedbackText)})">Download Full Report (PDF)</button>
                         </div>
                     </div>
                 `;
@@ -1525,7 +1525,7 @@
                 });
                 html += `<h3 style="margin-top:20px;">Total: ${result.totalScore}%</h3>`;
                 html += `<div class="feedback-card"><h4>📈 How to Improve</h4><p>${feedback}</p></div>`;
-                html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, '${feedback.replace(/'/g, "\\'")}', ${JSON.stringify(result.results)})">Download Report (PDF)</button>`;
+                html += `<button class="btn" onclick="downloadExamReport(${result.totalScore}, ${JSON.stringify(feedback)}, ${JSON.stringify(result.results)})">Download Report (PDF)</button>`;
                 document.getElementById('examArea').innerHTML = html;
                 showToast('🎉 Exam submitted! Check your results.', 'success');
             }
