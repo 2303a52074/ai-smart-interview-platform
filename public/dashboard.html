@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Smart · Dashboard</title>
+    <!-- Favicon (data URI) to avoid 404 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <!-- Chart.js & jsPDF -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -28,7 +30,6 @@
             background: radial-gradient(circle at 20% 30%, #1a1a2f, #0c0b1a);
             position: relative;
             overflow-x: hidden;
-            perspective: 1200px;
         }
 
         /* Glowing orbs */
@@ -76,25 +77,23 @@
             pointer-events: none;
         }
 
-        /* ===== SIDEBAR ===== */
+        /* ===== SIDEBAR (fixed, no bending) ===== */
         .sidebar {
             width: 260px;
-            background: rgba(20, 20, 35, 0.7);
-            backdrop-filter: blur(20px);
+            background: rgba(20, 20, 35, 0.85);
+            backdrop-filter: blur(15px);
             padding: 30px 15px;
             height: 100vh;
-            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6), inset -1px 0 0 rgba(255,255,255,0.1);
-            border-right: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+            border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
             flex-direction: column;
             position: relative;
             z-index: 100;
-            transform: translateZ(20px) rotateY(2deg);
-            transition: transform 0.4s;
+            transition: box-shadow 0.3s;
         }
         .sidebar:hover {
-            transform: translateZ(40px) rotateY(0deg);
-            box-shadow: 15px 0 50px rgba(124,92,255,0.3);
+            box-shadow: 8px 0 30px rgba(124,92,255,0.3);
         }
 
         .logo {
@@ -119,12 +118,10 @@
             text-align: left;
             font-size: 16px;
             font-weight: 500;
-            transition: 0.3s;
+            transition: 0.2s;
             display: flex;
             align-items: center;
             gap: 12px;
-            backdrop-filter: blur(5px);
-            transform: translateZ(5px);
         }
         .sidebar button i {
             width: 24px;
@@ -134,8 +131,7 @@
         .sidebar button:hover {
             background: rgba(124,92,255,0.2);
             color: white;
-            transform: translateZ(15px) translateX(5px);
-            box-shadow: -5px 5px 15px rgba(124,92,255,0.3);
+            transform: translateX(5px);
         }
         .sidebar button.active {
             background: rgba(124,92,255,0.3);
@@ -157,7 +153,6 @@
             overflow-y: auto;
             position: relative;
             z-index: 10;
-            transform-style: preserve-3d;
         }
 
         /* Cards */
@@ -169,11 +164,9 @@
             margin-bottom: 25px;
             border: 1px solid rgba(255,255,255,0.05);
             box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,255,0.2);
-            transform: translateZ(15px) rotateX(1deg);
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: box-shadow 0.3s;
         }
         .card:hover {
-            transform: translateZ(30px) rotateX(0deg);
             box-shadow: 0 30px 60px rgba(124,92,255,0.3);
         }
 
@@ -193,11 +186,9 @@
             padding: 20px;
             border: 1px solid rgba(255,255,255,0.05);
             box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            transform: translateZ(10px);
             transition: 0.3s;
         }
         .summary > div:hover {
-            transform: translateZ(20px);
             background: rgba(124,92,255,0.1);
         }
         .ring {
@@ -261,7 +252,7 @@
             transition: width 0.3s;
         }
 
-        /* Chat UI (standard interview) */
+        /* Chat UI */
         .chat-container {
             display: flex;
             flex-direction: column;
@@ -346,7 +337,7 @@
             margin-top:20px; padding:20px; background:rgba(255,255,255,0.03); border-radius:20px; border:1px solid rgba(255,255,255,0.1);
         }
 
-        /* Exam mode specific */
+        /* Exam mode */
         .exam-header {
             display: flex;
             justify-content: space-between;
@@ -495,11 +486,10 @@
             align-items: center;
             flex-wrap: wrap;
             border: 1px solid rgba(255,255,255,0.1);
-            transform: translateZ(10px);
             transition: 0.3s;
         }
         .job-card:hover {
-            transform: translateZ(20px) scale(1.02);
+            transform: scale(1.02);
             background: rgba(124,92,255,0.15);
             border-color: #7c5cff;
         }
@@ -594,11 +584,10 @@
             text-align: center;
             cursor: pointer;
             border: 1px solid rgba(255,255,255,0.1);
-            transform: translateZ(10px);
             transition: 0.3s;
         }
         .mode-card:hover {
-            transform: translateZ(20px) scale(1.05);
+            transform: scale(1.05);
             background: rgba(124,92,255,0.2);
             border-color: #7c5cff;
         }
@@ -696,11 +685,10 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             z-index: 1000;
             cursor: pointer;
-            transform: translateZ(30px);
             animation: float 3s infinite;
         }
         .ai-coach-float:hover {
-            transform: translateZ(50px) scale(1.05);
+            transform: scale(1.05);
             box-shadow: 0 30px 60px rgba(124,92,255,0.5);
         }
         .ai-coach-float .emoji { font-size: 2.5rem; }
@@ -708,8 +696,8 @@
             width: 30px; height: 30px; background: rgba(124,92,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: bounce 2s infinite;
         }
         @keyframes float {
-            0%,100% { transform: translateY(0) translateZ(30px); }
-            50% { transform: translateY(-10px) translateZ(30px); }
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         @keyframes bounce {
             0%,100% { transform: translateY(0); }
@@ -735,7 +723,7 @@
     <div class="orb orb3"></div>
     <canvas id="particles"></canvas>
 
-    <!-- Sidebar -->
+    <!-- Sidebar (no bending) -->
     <div class="sidebar">
         <div class="logo">
             <svg width="160" height="50" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
