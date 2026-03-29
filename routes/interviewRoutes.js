@@ -1,27 +1,34 @@
 const express = require('express');
 const authMiddleware = require('../middleware/authMiddleware');
 const Interview = require('../models/Interview');
-const natural = require('natural');
-const { WordTokenizer, PorterStemmer } = natural;
-const tokenizer = new WordTokenizer();
-
 const { generateQuestion, evaluateAnswer } = require('../utils/aiService');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const router = express.Router();
 
-// ================= UNIQUE TRACKERS =================
+// ================= TRACKERS =================
 const askedQuestions = new Set();
 const askedMCQs = new Set();
+
+// ================= TOPICS FOR VARIATION =================
+const mcqTopics = [
+  "arrays", "linked lists", "OOP", "database",
+  "operating systems", "networking", "react",
+  "nodejs", "javascript", "algorithms"
+];
+
+let topicIndex = 0;
 
 // ================= UNIQUE THEORY =================
 async function getUniqueQuestion(role, difficulty) {
   let newQ;
+  let attempts = 0;
 
   do {
     newQ = await generateQuestion(role, difficulty);
-  } while (askedQuestions.has(newQ.question));
+    attempts++;
+  } while (askedQuestions.has(newQ.question) && attempts < 5);
 
   askedQuestions.add(newQ.question);
   return newQ;
@@ -30,19 +37,31 @@ async function getUniqueQuestion(role, difficulty) {
 // ================= UNIQUE MCQ =================
 async function getUniqueMCQ(role, difficulty) {
   let mcq;
+  let attempts = 0;
 
   do {
+    const topic = mcqTopics[topicIndex % mcqTopics.length];
+    topicIndex++;
+
     const prompt = `
-Generate a UNIQUE multiple choice question for a ${difficulty} ${role} developer.
+Generate a completely NEW and DIFFERENT multiple choice question.
 
-Requirements:
-- Do NOT repeat common questions
-- Make it different from previous ones
-- Provide 4 options (A, B, C, D)
-- Give correct answer
+Topic: ${topic}
+Role: ${role}
+Difficulty: ${difficulty}
 
-Output JSON:
-{"question":"...", "options":["A...","B...","C...","D..."], "answer":"A"}
+Rules:
+- Do NOT repeat previous questions
+- Avoid generic questions
+- Make it specific and practical
+- Use different concepts each time
+
+Return JSON:
+{
+  "question": "...",
+  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+  "answer": "A"
+}
 `;
 
     const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -50,8 +69,8 @@ Output JSON:
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.9,
-        topP: 0.95
+        temperature: 1.0,
+        topP: 1.0
       }
     });
 
@@ -60,15 +79,25 @@ Output JSON:
 
     if (jsonMatch) {
       mcq = JSON.parse(jsonMatch[0]);
-    } else {
-      mcq = {
-        question: `What is a key concept in ${role}?`,
-        options: ['A. Concept1', 'B. Concept2', 'C. Concept3', 'D. Concept4'],
-        answer: 'A'
-      };
     }
 
-  } while (askedMCQs.has(mcq.question));
+    attempts++;
+
+  } while ((!mcq || askedMCQs.has(mcq.question)) && attempts < 5);
+
+  // fallback
+  if (!mcq || askedMCQs.has(mcq.question)) {
+    mcq = {
+      question: `Which concept is important in ${role}?`,
+      options: [
+        "A. Abstraction",
+        "B. Compilation",
+        "C. Networking",
+        "D. Storage"
+      ],
+      answer: "A"
+    };
+  }
 
   askedMCQs.add(mcq.question);
   return mcq;
@@ -89,7 +118,7 @@ router.post('/generate', authMiddleware, async (req, res) => {
     } catch {
       questions.push({
         type: 'text',
-        question: `Explain a key concept related to ${role}.`,
+        question: `Explain a key concept in ${role}`,
         skill: role,
         difficulty
       });
@@ -116,9 +145,9 @@ router.post('/exam', authMiddleware, async (req, res) => {
     } catch {
       questions.push({
         type: 'mcq',
-        question: `What is a key concept in ${role}?`,
-        options: ['A', 'B', 'C', 'D'],
-        answer: 'A',
+        question: `Basic concept in ${role}?`,
+        options: ["A", "B", "C", "D"],
+        answer: "A",
         skill: role,
         difficulty
       });
@@ -133,7 +162,7 @@ router.post('/exam', authMiddleware, async (req, res) => {
     } catch {
       questions.push({
         type: 'text',
-        question: `Explain an important ${role} concept.`,
+        question: `Explain ${role} concept`,
         skill: role,
         difficulty
       });
@@ -143,7 +172,7 @@ router.post('/exam', authMiddleware, async (req, res) => {
   res.json({ questions });
 });
 
-// ================= EVALUATE =================
+// ================= EVALUATION =================
 router.post('/exam/evaluate', authMiddleware, async (req, res) => {
   const { questions, answers } = req.body;
 
