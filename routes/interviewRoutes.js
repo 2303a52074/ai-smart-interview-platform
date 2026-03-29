@@ -11,7 +11,7 @@ const router = express.Router();
 const askedQuestions = new Set();
 const askedMCQs = new Set();
 
-// ================= TOPICS FOR VARIATION =================
+// ================= TOPICS =================
 const mcqTopics = [
   "arrays", "linked lists", "OOP", "database",
   "operating systems", "networking", "react",
@@ -44,24 +44,19 @@ async function getUniqueMCQ(role, difficulty) {
     topicIndex++;
 
     const prompt = `
-Generate a completely NEW and DIFFERENT multiple choice question.
+Generate a UNIQUE multiple choice question.
 
 Topic: ${topic}
 Role: ${role}
 Difficulty: ${difficulty}
 
 Rules:
-- Do NOT repeat previous questions
-- Avoid generic questions
-- Make it specific and practical
-- Use different concepts each time
+- Do NOT repeat questions
+- Provide 4 options (A, B, C, D)
+- Give correct answer
 
 Return JSON:
-{
-  "question": "...",
-  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-  "answer": "A"
-}
+{"question":"...", "options":["A...","B...","C...","D..."], "answer":"A"}
 `;
 
     const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -85,16 +80,10 @@ Return JSON:
 
   } while ((!mcq || askedMCQs.has(mcq.question)) && attempts < 5);
 
-  // fallback
-  if (!mcq || askedMCQs.has(mcq.question)) {
+  if (!mcq) {
     mcq = {
-      question: `Which concept is important in ${role}?`,
-      options: [
-        "A. Abstraction",
-        "B. Compilation",
-        "C. Networking",
-        "D. Storage"
-      ],
+      question: `Basic concept in ${role}?`,
+      options: ["A", "B", "C", "D"],
       answer: "A"
     };
   }
@@ -103,7 +92,7 @@ Return JSON:
   return mcq;
 }
 
-// ================= STANDARD INTERVIEW =================
+// ================= STANDARD =================
 router.post('/generate', authMiddleware, async (req, res) => {
   const { role, difficulty = 'medium' } = req.body;
 
@@ -112,23 +101,14 @@ router.post('/generate', authMiddleware, async (req, res) => {
   const questions = [];
 
   for (let i = 0; i < 5; i++) {
-    try {
-      const q = await getUniqueQuestion(role, difficulty);
-      questions.push(q);
-    } catch {
-      questions.push({
-        type: 'text',
-        question: `Explain a key concept in ${role}`,
-        skill: role,
-        difficulty
-      });
-    }
+    const q = await getUniqueQuestion(role, difficulty);
+    questions.push(q);
   }
 
   res.json({ questions });
 });
 
-// ================= EXAM MODE =================
+// ================= EXAM =================
 router.post('/exam', authMiddleware, async (req, res) => {
   const { role, difficulty = 'medium' } = req.body;
 
@@ -137,42 +117,22 @@ router.post('/exam', authMiddleware, async (req, res) => {
 
   const questions = [];
 
-  // 7 MCQs
+  // 7 MCQ
   for (let i = 0; i < 7; i++) {
-    try {
-      const q = await getUniqueMCQ(role, difficulty);
-      questions.push({ ...q, type: 'mcq', skill: role, difficulty });
-    } catch {
-      questions.push({
-        type: 'mcq',
-        question: `Basic concept in ${role}?`,
-        options: ["A", "B", "C", "D"],
-        answer: "A",
-        skill: role,
-        difficulty
-      });
-    }
+    const q = await getUniqueMCQ(role, difficulty);
+    questions.push({ ...q, type: 'mcq', skill: role, difficulty });
   }
 
   // 2 THEORY
   for (let i = 0; i < 2; i++) {
-    try {
-      const q = await getUniqueQuestion(role, difficulty);
-      questions.push({ ...q, type: 'text' });
-    } catch {
-      questions.push({
-        type: 'text',
-        question: `Explain ${role} concept`,
-        skill: role,
-        difficulty
-      });
-    }
+    const q = await getUniqueQuestion(role, difficulty);
+    questions.push({ ...q, type: 'text' });
   }
 
   res.json({ questions });
 });
 
-// ================= EVALUATION =================
+// ================= EVALUATE + SAVE =================
 router.post('/exam/evaluate', authMiddleware, async (req, res) => {
   const { questions, answers } = req.body;
 
@@ -204,7 +164,55 @@ router.post('/exam/evaluate', authMiddleware, async (req, res) => {
     }
   }
 
-  res.json({ totalScore, results });
+  const finalScore = Math.round((totalScore / (questions.length * 10)) * 100);
+
+  // 🔥 SAVE FIX (VERY IMPORTANT)
+  const newInterview = new Interview({
+    userId: req.user.id,
+    role: questions[0]?.skill || 'general',
+    difficulty: questions[0]?.difficulty || 'medium',
+    totalScore: finalScore,
+    answers: questions.map((q, i) => ({
+      question: q.question,
+      answer: answers[i],
+      score: results[i].score,
+      skill: q.skill,
+      timeSpent: 0
+    }))
+  });
+
+  await newInterview.save();
+
+  res.json({ totalScore: finalScore, results });
+});
+
+// ================= HISTORY =================
+router.get('/history', authMiddleware, async (req, res) => {
+  const history = await Interview.find({ userId: req.user.id }).sort({ createdAt: -1 });
+  res.json(history);
+});
+
+// ================= SKILLS =================
+router.get('/skills', authMiddleware, async (req, res) => {
+  const interviews = await Interview.find({ userId: req.user.id });
+
+  const skillMap = {};
+
+  interviews.forEach(i => {
+    i.answers.forEach(a => {
+      if (!skillMap[a.skill]) skillMap[a.skill] = [];
+      skillMap[a.skill].push(a.score);
+    });
+  });
+
+  const skillAverages = {};
+
+  for (let skill in skillMap) {
+    const scores = skillMap[skill];
+    skillAverages[skill] = scores.reduce((a, b) => a + b, 0) / scores.length;
+  }
+
+  res.json(skillAverages);
 });
 
 module.exports = router;
