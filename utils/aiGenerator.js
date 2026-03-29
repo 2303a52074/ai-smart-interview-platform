@@ -13,36 +13,56 @@ async function getGenerator() {
 
 /**
  * Generate an interview question based on role and difficulty
- * @param {string} role - e.g., 'frontend', 'backend', 'react'
- * @param {string} difficulty - 'easy', 'medium', 'hard'
- * @returns {Promise<Object>} - { type: 'text', question: string, skill: string, difficulty, keywords: [] }
  */
 async function generateQuestion(role, difficulty) {
   const gen = await getGenerator();
 
-  // Construct a prompt for the model
-  const prompt = `Generate a technical interview question for a ${difficulty} level ${role} developer. The question should be clear and specific.`;
+  // Add randomness
+  const topics = ["conceptual", "coding", "scenario-based", "debugging"];
+  const styles = ["direct", "tricky", "real-world"];
+
+  const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+  const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+
+  // Improved prompt
+  const prompt = `
+Generate ONE ${difficulty} level ${randomTopic} technical interview question 
+for a ${role} developer.
+
+Style: ${randomStyle}
+Avoid repeating common questions.
+Make it clear and specific.
+Only output the question.
+`;
 
   const result = await gen(prompt, {
-    max_length: 60,
-    temperature: 0.7,
+    max_length: 80,
+    temperature: 0.9,     // 🔥 increased for creativity
+    top_k: 50,            // 🔥 adds variation
+    top_p: 0.95,
     do_sample: true,
   });
 
   let questionText = result[0].generated_text.trim();
 
-  // Basic cleaning: remove possible prefixes
-  questionText = questionText.replace(/^question:/i, '').trim();
+  // Clean text
+  questionText = questionText
+    .replace(/^question:/i, '')
+    .replace(/\n/g, ' ')
+    .trim();
 
-  // For now, we'll return a text-type question with placeholder keywords
-  // In a more advanced version, you could ask the model to also generate keywords.
+  // Retry if output is too short or bad
+  if (!questionText || questionText.length < 15) {
+    return generateQuestion(role, difficulty);
+  }
+
   return {
     type: 'text',
     question: questionText,
     skill: role,
     difficulty: difficulty,
-    keywords: [], // we'll leave empty for now; evaluation will be simple
-    hint: `Think about the core concepts of ${role}.`,
+    keywords: [],
+    hint: `Think about ${role} fundamentals.`,
   };
 }
 
