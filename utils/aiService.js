@@ -3,37 +3,42 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate Interview Question (WITH RANDOMNESS)
+ * Generate Interview Question (NO REPEAT + RANDOM)
  */
 async function generateQuestion(role, difficulty) {
-  const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  // Random topics to avoid repetition
   const topics = [
     "performance",
     "optimization",
     "debugging",
     "real-world scenario",
     "design",
-    "edge cases"
+    "edge cases",
+    "scalability",
+    "security"
   ];
 
   const randomTopic = topics[Math.floor(Math.random() * topics.length)];
 
+  // Strong randomness
+  const uniqueSeed = Date.now() + Math.random();
+
   const prompt = `
 You are a technical interviewer.
 
-Generate ONE ${difficulty} level interview question for a ${role}.
+Generate ONE UNIQUE ${difficulty} level interview question for a ${role}.
 
 Focus on ${randomTopic}.
 
+Seed: ${uniqueSeed}
+
 Rules:
-- Keep it SHORT (max 2-3 lines)
+- MUST be different every time
+- Keep it SHORT (max 2 lines)
 - No explanations
 - No quotes
-- No extra text
-- Ask a DIFFERENT question every time
-- Avoid repeating previous questions
+- Only the question
 
 Output only the question.
 `;
@@ -42,7 +47,6 @@ Output only the question.
     const result = await model.generateContent(prompt);
     let questionText = result.response.text().trim();
 
-    // Clean output
     questionText = questionText
       .replace(/["']/g, '')
       .replace(/\n+/g, ' ')
@@ -54,7 +58,7 @@ Output only the question.
       skill: role,
       difficulty: difficulty,
       keywords: [],
-      hint: `Think about ${randomTopic} and core ${role} concepts.`
+      hint: `Think about ${randomTopic} and ${role} fundamentals.`
     };
   } catch (error) {
     console.error('Gemini API error (generateQuestion):', error.message);
@@ -63,10 +67,10 @@ Output only the question.
 }
 
 /**
- * Evaluate Text Answer
+ * Evaluate Text Answer (ALWAYS RETURNS JSON)
  */
 async function evaluateAnswer(question, answer) {
-  const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
 You are a strict technical interviewer.
@@ -81,13 +85,12 @@ ${answer}
 
 Rules:
 - Give score from 1 to 10
-- Be strict but fair
 - Mention correct points
 - Mention missing points
-- Keep feedback short (2-3 lines)
+- Keep feedback short (2 lines)
 
 IMPORTANT:
-Return ONLY valid JSON.
+Return ONLY JSON.
 
 Format:
 {
@@ -107,7 +110,7 @@ Format:
     } else {
       return {
         score: 5,
-        feedback: "Basic answer. Improve explanation and coverage."
+        feedback: "Answer is basic. Needs more explanation and depth."
       };
     }
   } catch (error) {
@@ -124,7 +127,7 @@ Format:
  * Evaluate Coding Answer
  */
 async function evaluateCode(question, code) {
-  const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
 You are an expert coding interviewer.
@@ -146,7 +149,7 @@ Rules:
 - Keep feedback short
 
 IMPORTANT:
-Return ONLY valid JSON.
+Return ONLY JSON.
 
 Format:
 {
@@ -166,7 +169,7 @@ Format:
     } else {
       return {
         score: 5,
-        feedback: "Code partially correct. Needs optimization."
+        feedback: "Code is partially correct. Improve logic and edge cases."
       };
     }
   } catch (error) {
