@@ -3,49 +3,28 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate a question using Google Gemini
+ * Generate Interview Question
  */
 async function generateQuestion(role, difficulty) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
 
-  // Add randomness for better variety
-  const topics = ["conceptual", "coding", "real-world scenario", "debugging"];
-  const styles = ["direct", "tricky", "application-based"];
-
   const prompt = `
-Generate ONE unique ${difficulty} level technical interview question for a ${role} developer.
+You are an experienced technical interviewer.
+
+Generate ONE ${difficulty} level interview question for a ${role} role.
 
 Requirements:
-- Make it ${topics[Math.floor(Math.random() * topics.length)]}
-- Style should be ${styles[Math.floor(Math.random() * styles.length)]}
-- Avoid repeating common questions
-- Focus on core concepts
-- Keep it clear and concise
+- Real-world and interview-relevant
+- Tests core concepts and problem-solving
+- Prefer scenario-based questions
+- Avoid generic definitions
 
-Output ONLY the question.
+Output only the question.
 `;
 
   try {
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.9,
-        topP: 0.95,
-        maxOutputTokens: 100
-      }
-    });
-
-    let questionText = result.response.text().trim();
-
-    // Retry if bad/empty response
-    if (!questionText || questionText.length < 10) {
-      return generateQuestion(role, difficulty);
-    }
+    const result = await model.generateContent(prompt);
+    const questionText = result.response.text().trim();
 
     return {
       type: 'text',
@@ -53,7 +32,7 @@ Output ONLY the question.
       skill: role,
       difficulty: difficulty,
       keywords: [],
-      hint: `Think about ${role} fundamentals.`
+      hint: `Think about real-world use of ${role} concepts and edge cases.`
     };
   } catch (error) {
     console.error('Gemini API error (generateQuestion):', error.message);
@@ -62,58 +41,50 @@ Output ONLY the question.
 }
 
 /**
- * Evaluate an answer using Google Gemini
+ * Evaluate Text Answer
  */
 async function evaluateAnswer(question, answer) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
 
   const prompt = `
-You are an expert technical interviewer.
+You are a strict technical interviewer.
 
-Evaluate the following answer:
+Evaluate the candidate's answer based on:
+- Correctness
+- Depth
+- Clarity
+- Coverage of key points
 
-Question: "${question}"
-Answer: "${answer}"
+Question:
+"${question}"
 
-Give:
-- Score (1 to 10)
-- Short feedback (2-3 lines)
+Answer:
+"${answer}"
 
-Output strictly in JSON format:
-{"score": number, "feedback": "string"}
+Instructions:
+- Give score from 1 to 10
+- Mention correct parts
+- Mention missing points
+- Keep feedback professional
+
+Output strictly in JSON:
+{
+  "score": number,
+  "feedback": "string"
+}
 `;
 
   try {
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 200
-      }
-    });
-
+    const result = await model.generateContent(prompt);
     const raw = result.response.text();
 
-    // Extract JSON safely
     const jsonMatch = raw.match(/\{.*\}/s);
-
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     } else {
-      // fallback if JSON fails
       const scoreMatch = raw.match(/(\d+)/);
       const score = scoreMatch ? parseInt(scoreMatch[0]) : 5;
-
-      return {
-        score,
-        feedback: raw
-      };
+      return { score, feedback: raw };
     }
   } catch (error) {
     console.error('Gemini API error (evaluateAnswer):', error.message);
@@ -121,4 +92,62 @@ Output strictly in JSON format:
   }
 }
 
-module.exports = { generateQuestion, evaluateAnswer };
+/**
+ * 💻 Evaluate Coding Answer (NEW FEATURE)
+ */
+async function evaluateCode(question, code) {
+  const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+
+  const prompt = `
+You are an expert coding interviewer.
+
+Evaluate the candidate's code for the given problem.
+
+Problem:
+"${question}"
+
+Code:
+"${code}"
+
+Evaluate based on:
+- Correctness
+- Logic
+- Efficiency
+- Code quality
+
+Instructions:
+- Give score from 1 to 10
+- Explain if logic is correct or not
+- Suggest improvements
+- Mention if edge cases are handled
+
+Output strictly in JSON:
+{
+  "score": number,
+  "feedback": "string"
+}
+`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
+
+    const jsonMatch = raw.match(/\{.*\}/s);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    } else {
+      const scoreMatch = raw.match(/(\d+)/);
+      const score = scoreMatch ? parseInt(scoreMatch[0]) : 5;
+      return { score, feedback: raw };
+    }
+  } catch (error) {
+    console.error('Gemini API error (evaluateCode):', error.message);
+    throw new Error('Code evaluation failed');
+  }
+}
+
+module.exports = {
+  generateQuestion,
+  evaluateAnswer,
+  evaluateCode
+};
