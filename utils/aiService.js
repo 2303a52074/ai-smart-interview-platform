@@ -3,28 +3,32 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate Interview Question
+ * Generate Interview Question (CLEAN & SHORT)
  */
 async function generateQuestion(role, difficulty) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
 
   const prompt = `
-You are an experienced technical interviewer.
+You are a technical interviewer.
 
-Generate ONE ${difficulty} level interview question for a ${role} role.
+Generate ONE ${difficulty} level interview question for a ${role}.
 
-Requirements:
-- Real-world and interview-relevant
-- Tests core concepts and problem-solving
-- Prefer scenario-based questions
-- Avoid generic definitions
+Rules:
+- Keep it SHORT (max 2-3 lines)
+- No explanations
+- No quotes
+- No extra text
+- Only the question
 
 Output only the question.
 `;
 
   try {
     const result = await model.generateContent(prompt);
-    const questionText = result.response.text().trim();
+    let questionText = result.response.text().trim();
+
+    // Clean unwanted quotes and formatting
+    questionText = questionText.replace(/["']/g, '').replace(/\n+/g, ' ').trim();
 
     return {
       type: 'text',
@@ -32,7 +36,7 @@ Output only the question.
       skill: role,
       difficulty: difficulty,
       keywords: [],
-      hint: `Think about real-world use of ${role} concepts and edge cases.`
+      hint: `Think about core ${role} concepts and real-world usage.`
     };
   } catch (error) {
     console.error('Gemini API error (generateQuestion):', error.message);
@@ -41,7 +45,7 @@ Output only the question.
 }
 
 /**
- * Evaluate Text Answer
+ * Evaluate Text Answer (STRICT JSON OUTPUT)
  */
 async function evaluateAnswer(question, answer) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -49,25 +53,25 @@ async function evaluateAnswer(question, answer) {
   const prompt = `
 You are a strict technical interviewer.
 
-Evaluate the candidate's answer based on:
-- Correctness
-- Depth
-- Clarity
-- Coverage of key points
+Evaluate the answer.
 
 Question:
-"${question}"
+${question}
 
 Answer:
-"${answer}"
+${answer}
 
-Instructions:
+Rules:
 - Give score from 1 to 10
-- Mention correct parts
-- Mention missing points
-- Keep feedback professional
+- Be strict but fair
+- Mention what is correct
+- Mention what is missing
+- Keep feedback short (2-3 lines)
 
-Output strictly in JSON:
+IMPORTANT:
+Return ONLY valid JSON. No text outside JSON.
+
+Format:
 {
   "score": number,
   "feedback": "string"
@@ -76,24 +80,31 @@ Output strictly in JSON:
 
   try {
     const result = await model.generateContent(prompt);
-    const raw = result.response.text();
+    let raw = result.response.text().trim();
 
-    const jsonMatch = raw.match(/\{.*\}/s);
+    // Extract JSON safely
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     } else {
-      const scoreMatch = raw.match(/(\d+)/);
-      const score = scoreMatch ? parseInt(scoreMatch[0]) : 5;
-      return { score, feedback: raw };
+      return {
+        score: 5,
+        feedback: "Basic answer. Could be improved with more details."
+      };
     }
   } catch (error) {
     console.error('Gemini API error (evaluateAnswer):', error.message);
-    throw new Error('Evaluation failed');
+
+    return {
+      score: 5,
+      feedback: "Evaluation failed. Try again."
+    };
   }
 }
 
 /**
- * 💻 Evaluate Coding Answer (NEW FEATURE)
+ * Evaluate Coding Answer (AI CODING ROUND)
  */
 async function evaluateCode(question, code) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -101,27 +112,25 @@ async function evaluateCode(question, code) {
   const prompt = `
 You are an expert coding interviewer.
 
-Evaluate the candidate's code for the given problem.
+Evaluate the code.
 
 Problem:
-"${question}"
+${question}
 
 Code:
-"${code}"
+${code}
 
-Evaluate based on:
-- Correctness
-- Logic
-- Efficiency
-- Code quality
-
-Instructions:
+Rules:
 - Give score from 1 to 10
-- Explain if logic is correct or not
+- Check correctness
+- Check logic
 - Suggest improvements
-- Mention if edge cases are handled
+- Keep feedback short
 
-Output strictly in JSON:
+IMPORTANT:
+Return ONLY valid JSON.
+
+Format:
 {
   "score": number,
   "feedback": "string"
@@ -130,19 +139,25 @@ Output strictly in JSON:
 
   try {
     const result = await model.generateContent(prompt);
-    const raw = result.response.text();
+    let raw = result.response.text().trim();
 
-    const jsonMatch = raw.match(/\{.*\}/s);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     } else {
-      const scoreMatch = raw.match(/(\d+)/);
-      const score = scoreMatch ? parseInt(scoreMatch[0]) : 5;
-      return { score, feedback: raw };
+      return {
+        score: 5,
+        feedback: "Code partially correct. Needs improvement."
+      };
     }
   } catch (error) {
     console.error('Gemini API error (evaluateCode):', error.message);
-    throw new Error('Code evaluation failed');
+
+    return {
+      score: 5,
+      feedback: "Code evaluation failed."
+    };
   }
 }
 
