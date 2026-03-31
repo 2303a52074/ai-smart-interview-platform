@@ -3,22 +3,37 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate Interview Question (CLEAN & SHORT)
+ * Generate Interview Question (WITH RANDOMNESS)
  */
 async function generateQuestion(role, difficulty) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+
+  // Random topics to avoid repetition
+  const topics = [
+    "performance",
+    "optimization",
+    "debugging",
+    "real-world scenario",
+    "design",
+    "edge cases"
+  ];
+
+  const randomTopic = topics[Math.floor(Math.random() * topics.length)];
 
   const prompt = `
 You are a technical interviewer.
 
 Generate ONE ${difficulty} level interview question for a ${role}.
 
+Focus on ${randomTopic}.
+
 Rules:
 - Keep it SHORT (max 2-3 lines)
 - No explanations
 - No quotes
 - No extra text
-- Only the question
+- Ask a DIFFERENT question every time
+- Avoid repeating previous questions
 
 Output only the question.
 `;
@@ -27,8 +42,11 @@ Output only the question.
     const result = await model.generateContent(prompt);
     let questionText = result.response.text().trim();
 
-    // Clean unwanted quotes and formatting
-    questionText = questionText.replace(/["']/g, '').replace(/\n+/g, ' ').trim();
+    // Clean output
+    questionText = questionText
+      .replace(/["']/g, '')
+      .replace(/\n+/g, ' ')
+      .trim();
 
     return {
       type: 'text',
@@ -36,7 +54,7 @@ Output only the question.
       skill: role,
       difficulty: difficulty,
       keywords: [],
-      hint: `Think about core ${role} concepts and real-world usage.`
+      hint: `Think about ${randomTopic} and core ${role} concepts.`
     };
   } catch (error) {
     console.error('Gemini API error (generateQuestion):', error.message);
@@ -45,7 +63,7 @@ Output only the question.
 }
 
 /**
- * Evaluate Text Answer (STRICT JSON OUTPUT)
+ * Evaluate Text Answer
  */
 async function evaluateAnswer(question, answer) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -64,12 +82,12 @@ ${answer}
 Rules:
 - Give score from 1 to 10
 - Be strict but fair
-- Mention what is correct
-- Mention what is missing
+- Mention correct points
+- Mention missing points
 - Keep feedback short (2-3 lines)
 
 IMPORTANT:
-Return ONLY valid JSON. No text outside JSON.
+Return ONLY valid JSON.
 
 Format:
 {
@@ -82,7 +100,6 @@ Format:
     const result = await model.generateContent(prompt);
     let raw = result.response.text().trim();
 
-    // Extract JSON safely
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
 
     if (jsonMatch) {
@@ -90,7 +107,7 @@ Format:
     } else {
       return {
         score: 5,
-        feedback: "Basic answer. Could be improved with more details."
+        feedback: "Basic answer. Improve explanation and coverage."
       };
     }
   } catch (error) {
@@ -104,7 +121,7 @@ Format:
 }
 
 /**
- * Evaluate Coding Answer (AI CODING ROUND)
+ * Evaluate Coding Answer
  */
 async function evaluateCode(question, code) {
   const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
@@ -125,6 +142,7 @@ Rules:
 - Check correctness
 - Check logic
 - Suggest improvements
+- Mention edge cases
 - Keep feedback short
 
 IMPORTANT:
@@ -148,7 +166,7 @@ Format:
     } else {
       return {
         score: 5,
-        feedback: "Code partially correct. Needs improvement."
+        feedback: "Code partially correct. Needs optimization."
       };
     }
   } catch (error) {
