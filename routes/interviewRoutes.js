@@ -12,10 +12,8 @@ router.post('/generate', async (req, res) => {
     const skill = role || 'general';
     const level = difficulty || 'medium';
     
-    // Generate 5 questions for standard interview
     const questions = await generateAIQuestions(skill, level, 5);
     
-    // Format for frontend compatibility
     const formattedQuestions = questions.map((q, idx) => ({
       id: idx,
       type: q.type || 'text',
@@ -34,7 +32,6 @@ router.post('/generate', async (req, res) => {
     
   } catch (error) {
     console.error("Generation Error:", error);
-    // Send fallback questions if AI fails
     res.json({ 
       success: true, 
       questions: getFallbackQuestions(req.body.role || 'general', 5)
@@ -45,36 +42,53 @@ router.post('/generate', async (req, res) => {
 // ================= SAVE INTERVIEW RESULTS =================
 router.post('/save', async (req, res) => {
   console.log("💾 SAVING INTERVIEW RESULTS");
+  console.log("Received body:", JSON.stringify(req.body, null, 2));
   
   try {
     const { role, difficulty, totalScore, answers } = req.body;
     const userId = req.user?.id || 'anonymous';
     
+    if (!answers || !Array.isArray(answers) || answers.length === 0) {
+      console.error("No answers provided");
+      return res.status(400).json({ 
+        success: false, 
+        error: "No answers to save" 
+      });
+    }
+    
+    const formattedQuestions = answers.map((item, idx) => ({
+      question: item.question || `Question ${idx + 1}`,
+      answer: item.answer || "",
+      score: item.score || 0,
+      skill: item.skill || role || 'general',
+      timeSpent: item.timeSpent || 30
+    }));
+    
     const interview = new Interview({
       userId: userId,
       type: 'standard',
-      skill: role,
-      difficulty: difficulty,
-      score: totalScore,
-      questions: answers.map(a => ({
-        question: a.question,
-        answer: a.answer,
-        score: a.score,
-        skill: a.skill
-      })),
+      skill: role || 'general',
+      difficulty: difficulty || 'medium',
+      score: totalScore || 0,
+      questions: formattedQuestions,
       createdAt: new Date()
     });
     
-    await interview.save();
+    const savedInterview = await interview.save();
+    console.log(`✅ Interview saved with ID: ${savedInterview._id}`);
     
-    // Update user XP and level
-    await updateUserXP(userId, totalScore);
-    
-    res.json({ success: true, message: "Interview saved successfully" });
+    res.json({ 
+      success: true, 
+      message: "Interview saved successfully",
+      interviewId: savedInterview._id
+    });
     
   } catch (error) {
     console.error("Save Error:", error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -84,25 +98,28 @@ router.get('/history', async (req, res) => {
   
   try {
     const userId = req.user?.id || 'anonymous';
+    console.log(`User: ${userId}`);
+    
     const interviews = await Interview.find({ userId })
       .sort({ createdAt: -1 })
       .limit(50);
     
-    // Format for frontend compatibility
-    const history = interviews.map(i => ({
-      id: i._id,
-      role: i.skill,
-      difficulty: i.difficulty,
-      totalScore: i.score,
-      date: i.createdAt,
-      questionsCount: i.questions?.length || 0
+    console.log(`Found ${interviews.length} interviews`);
+    
+    const history = interviews.map(interview => ({
+      id: interview._id,
+      role: interview.skill,
+      difficulty: interview.difficulty,
+      totalScore: interview.score,
+      date: interview.createdAt,
+      questionsCount: interview.questions?.length || 0
     }));
     
     res.json(history);
     
   } catch (error) {
     console.error("History Error:", error);
-    res.json([]); // Return empty array on error
+    res.json([]);
   }
 });
 
@@ -147,22 +164,18 @@ router.post('/evaluate', async (req, res) => {
     let score = 0;
     let feedback = "";
     
-    // Simple evaluation logic
     if (questionObj.type === 'mcq') {
       const isCorrect = answer === questionObj.correctAnswer;
       score = isCorrect ? 10 : 0;
       feedback = isCorrect ? "Correct answer!" : "Incorrect answer.";
     } else {
-      // Score based on answer length and quality
       const length = answer?.length || 0;
       if (length > 100) score = 8;
       else if (length > 50) score = 6;
       else if (length > 20) score = 4;
       else score = 2;
       
-      // Add time bonus
       if (timeSpent && timeSpent < 20) score = Math.min(10, score + 1);
-      
       feedback = getFeedbackByScore(score);
     }
     
@@ -198,18 +211,6 @@ router.post('/feedback', async (req, res) => {
       feedback = "Keep practicing! Start with basic concepts and gradually move to advanced topics. Use online resources, take mock interviews, and focus on communication clarity. You'll improve with consistent effort.";
     }
     
-    // Add specific suggestions
-    const weakTopics = [];
-    if (avgScore < 6) {
-      weakTopics.push("Review fundamental concepts");
-      weakTopics.push("Practice explaining technical topics aloud");
-      weakTopics.push("Study common interview questions");
-    }
-    
-    if (weakTopics.length > 0) {
-      feedback += "\n\n📌 Specific areas to improve:\n• " + weakTopics.join("\n• ");
-    }
-    
     res.json({ feedback: feedback });
     
   } catch (error) {
@@ -225,10 +226,7 @@ router.post('/exam', async (req, res) => {
   try {
     const { role, difficulty } = req.body;
     
-    // Generate 9 questions (7 MCQ + 2 Theory)
     const examQuestions = [];
-    
-    // Add 7 MCQ questions
     const mcqBank = getMCQBank();
     for (let i = 0; i < 7; i++) {
       const q = { ...mcqBank[i % mcqBank.length] };
@@ -236,7 +234,6 @@ router.post('/exam', async (req, res) => {
       examQuestions.push(q);
     }
     
-    // Add 2 theory questions
     const theoryBank = getTheoryBank();
     for (let i = 0; i < 2; i++) {
       examQuestions.push({
@@ -275,13 +272,11 @@ router.post('/exam/evaluate', async (req, res) => {
         score = isCorrect ? 10 : 0;
         feedback = isCorrect ? "Correct!" : `Wrong. Correct answer: ${q.correctAnswer}`;
       } else {
-        // Score theory answers
         const length = userAnswer?.length || 0;
         if (length > 100) score = 9;
         else if (length > 50) score = 7;
         else if (length > 20) score = 5;
         else score = 3;
-        
         feedback = getFeedbackByScore(score);
       }
       
@@ -291,10 +286,7 @@ router.post('/exam/evaluate', async (req, res) => {
     
     const finalScore = Math.round((totalScore / (questions.length * 10)) * 100);
     
-    res.json({ 
-      totalScore: finalScore, 
-      results: results 
-    });
+    res.json({ totalScore: finalScore, results: results });
     
   } catch (error) {
     console.error("Exam Evaluate Error:", error);
@@ -394,13 +386,6 @@ function getFeedbackByScore(score) {
   if (score >= 6) return "Good answer. Could add more detail.";
   if (score >= 4) return "Decent answer. Review core concepts.";
   return "Needs improvement. Study fundamentals.";
-}
-
-async function updateUserXP(userId, score) {
-  // Simple XP calculation: score * 10
-  const xpEarned = Math.floor(score);
-  // In a real app, you'd update the user document
-  console.log(`User ${userId} earned ${xpEarned} XP`);
 }
 
 module.exports = router;
