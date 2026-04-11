@@ -341,7 +341,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
     <script>
         (function() {
-            const BASE_URL = window.location.origin;
+            fetch(BASE_URL + '/api/interview/exam', ...)
             const token = localStorage.getItem("token");
             if (!token) location.href = "login.html";
 
