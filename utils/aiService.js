@@ -1,36 +1,35 @@
+require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate Interview Question (NO REPEAT + RANDOM)
+ * Generate Interview Question (SAFE VERSION)
  */
 async function generateQuestion(role, difficulty) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const topics = [
-    "performance",
-    "optimization",
-    "debugging",
-    "real-world scenario",
-    "design",
-    "edge cases",
-    "scalability",
-    "security"
-  ];
+    const topics = [
+      "performance",
+      "optimization",
+      "debugging",
+      "real-world scenario",
+      "design",
+      "edge cases",
+      "scalability",
+      "security"
+    ];
 
-  const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    const uniqueSeed = Date.now() + Math.random();
 
-  // Strong randomness
-  const uniqueSeed = Date.now() + Math.random();
-
-  const prompt = `
+    const prompt = `
 You are a technical interviewer.
 
 Generate ONE UNIQUE ${difficulty} level interview question for a ${role}.
 
 Focus on ${randomTopic}.
-
 Seed: ${uniqueSeed}
 
 Rules:
@@ -43,14 +42,19 @@ Rules:
 Output only the question.
 `;
 
-  try {
     const result = await model.generateContent(prompt);
     let questionText = result.response.text().trim();
 
+    // Clean text
     questionText = questionText
       .replace(/["']/g, '')
       .replace(/\n+/g, ' ')
       .trim();
+
+    // 🔥 Safety check
+    if (!questionText || questionText.length < 5) {
+      throw new Error("Empty response");
+    }
 
     return {
       type: 'text',
@@ -60,19 +64,30 @@ Output only the question.
       keywords: [],
       hint: `Think about ${randomTopic} and ${role} fundamentals.`
     };
+
   } catch (error) {
-    console.error('Gemini API error (generateQuestion):', error.message);
-    throw new Error('AI generation failed');
+    console.error('Gemini ERROR (generateQuestion):', error.message);
+
+    // ✅ FALLBACK (VERY IMPORTANT)
+    return {
+      type: 'text',
+      question: "Explain time complexity of binary search.",
+      skill: role,
+      difficulty: difficulty,
+      keywords: [],
+      hint: "Think about efficiency and divide & conquer."
+    };
   }
 }
 
 /**
- * Evaluate Text Answer (ALWAYS RETURNS JSON)
+ * Evaluate Text Answer (SAFE JSON)
  */
 async function evaluateAnswer(question, answer) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const prompt = `
+    const prompt = `
 You are a strict technical interviewer.
 
 Evaluate the answer.
@@ -99,37 +114,39 @@ Format:
 }
 `;
 
-  try {
     const result = await model.generateContent(prompt);
     let raw = result.response.text().trim();
 
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    } else {
-      return {
-        score: 5,
-        feedback: "Answer is basic. Needs more explanation and depth."
-      };
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : null;
     }
+
+    if (!parsed) throw new Error("Invalid JSON");
+
+    return parsed;
+
   } catch (error) {
-    console.error('Gemini API error (evaluateAnswer):', error.message);
+    console.error('Gemini ERROR (evaluateAnswer):', error.message);
 
     return {
       score: 5,
-      feedback: "Evaluation failed. Try again."
+      feedback: "Basic answer. Add more depth and clarity."
     };
   }
 }
 
 /**
- * Evaluate Coding Answer
+ * Evaluate Coding Answer (SAFE JSON)
  */
 async function evaluateCode(question, code) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const prompt = `
+    const prompt = `
 You are an expert coding interviewer.
 
 Evaluate the code.
@@ -158,26 +175,27 @@ Format:
 }
 `;
 
-  try {
     const result = await model.generateContent(prompt);
     let raw = result.response.text().trim();
 
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    } else {
-      return {
-        score: 5,
-        feedback: "Code is partially correct. Improve logic and edge cases."
-      };
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      parsed = match ? JSON.parse(match[0]) : null;
     }
+
+    if (!parsed) throw new Error("Invalid JSON");
+
+    return parsed;
+
   } catch (error) {
-    console.error('Gemini API error (evaluateCode):', error.message);
+    console.error('Gemini ERROR (evaluateCode):', error.message);
 
     return {
       score: 5,
-      feedback: "Code evaluation failed."
+      feedback: "Code needs improvement. Handle edge cases better."
     };
   }
 }
