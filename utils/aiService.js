@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * Generate Interview Question (NO REPEAT + RANDOM)
  */
 async function generateQuestion(role, difficulty) {
-  const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const topics = [
     "performance",
